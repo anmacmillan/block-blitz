@@ -28,7 +28,7 @@ LINES = {
     'v-allclear': 'All clear! Brilliant!', 'v-newbest': 'A new best score! Well done!',
     'v-greatbest': 'What a game! A brand new best score!', 'v-greatgame': "Great game! Let's play again!",
     'v-hello-margot': "Hello Margot! Let's make some sparkles!", 'v-hello': "Hello! Let's make some sparkles!",
-    'v-hello-manon': "Hello Manon! Let's make some sparkles!",
+    'v-hello-manon': "Hello Manon! Let's make some sparkles!", 'v-hello-dad': "Hello Dad! Let's make some sparkles!",
 }
 # Nevermore: Manon's gothic theme. Deadpan, but always kind.
 GSFX = {
@@ -45,7 +45,7 @@ GLINES = {
     'g-double': 'Two at once. Efficient.', 'g-amazing': 'Magnificent. Truly.', 'g-allclear': 'Everything is gone. Perfect.',
     'g-newbest': 'A new best score. Darkly magnificent.', 'g-greatbest': 'A new record. I knew you had it in you.',
     'g-greatgame': 'A worthy game. Again?', 'g-hello-manon': 'Hello, Manon. Shall we destroy some blocks?',
-    'g-hello-margot': 'Hello, Margot. Shall we destroy some blocks?', 'g-hello': 'Hello. Shall we destroy some blocks?',
+    'g-hello-margot': 'Hello, Margot. Shall we destroy some blocks?', 'g-hello': 'Hello. Shall we destroy some blocks?', 'g-hello-dad': 'Hello, Dad. Shall we destroy some blocks?',
 }
 GMUSIC = ("A seamless looping instrumental for a gothic children's puzzle game, darkly elegant and quirky: harpsichord, "
           "pizzicato strings and soft cello, a little spooky but playful and calm, medium-slow tempo, no vocals, no drums")

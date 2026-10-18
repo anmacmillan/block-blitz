@@ -79,6 +79,7 @@
   <div id="title">BLOCK BLITZ</div>
   <div class="icons">
     <button class="who" id="whoBtn">🙂</button>
+    <button class="icon" id="themeBtn" title="Change the look">🎨</button>
     <button class="icon" id="musicBtn" title="Music">🎵</button>
     <button class="icon" id="soundBtn" title="Sound">🔊</button>
     <button class="icon" id="newBtn" title="New game">↻</button>
@@ -404,14 +405,22 @@ $('#yesNew').onclick = () => {
 $('#noNew').onclick = () => $('#confirm').classList.remove('show');
 let pickTheme = 'sparkle';
 document.querySelectorAll('.theme').forEach(b => b.onclick = () => { pickTheme = b.dataset.t; document.querySelectorAll('.theme').forEach(x => x.classList.toggle('on', x === b)); });
+// the family: always offered, with their usual look; anyone else can add themselves
+const FAMILY = [['Manon', 'gothic'], ['Margot', 'sparkle'], ['Dad', 'sparkle']];
+const cloudBest = {};
 function showPlayers() {
-  const list = Object.values(ST.players);
-  $('#playerList').innerHTML = list.length ? list.map(p => `<button class="btn ${p.theme === 'gothic' ? 'ghost' : ''}" data-p="${pkey(p.name)}">${p.theme === 'gothic' ? '🦇' : '✨'} ${esc(p.name)} <small>👑 ${p.best}</small></button>`).join('') : '';
-  $('#newHead').style.display = list.length ? '' : 'none';
-  $('#nameIn').value = list.length ? '' : 'Margot';
+  const people = [...FAMILY.map(([n, t]) => ST.players[pkey(n)] || blank(n, t)), ...Object.values(ST.players).filter(p => !FAMILY.some(([n]) => pkey(n) === pkey(p.name)))];
+  const best = p => Math.max(p.best || 0, cloudBest[pkey(p.name)] || 0);
+  $('#playerList').innerHTML = people.map(p => `<button class="btn ${p.theme === 'gothic' ? 'ghost' : ''}" data-p="${pkey(p.name)}" data-n="${esc(p.name)}" data-t="${p.theme}">${p.theme === 'gothic' ? '🦇' : '✨'} ${esc(p.name)} <small>👑 ${best(p)}</small></button>`).join('');
+  $('#newHead').style.display = '';
+  $('#nameIn').value = '';
   $('#hello').classList.add('show');
+  // everyone's best score, from whichever iPad they played on
+  for (const p of people) fetch(CLOUD + ('BB' + pkey(p.name)).slice(0, 12) + '.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
+    if (d && d.best > (cloudBest[pkey(p.name)] || 0)) { cloudBest[pkey(p.name)] = d.best; const b = document.querySelector(`[data-p="${pkey(p.name)}"] small`); if (b) b.textContent = `👑 ${best(p)}`; }
+  }).catch(() => {});
 }
-$('#playerList').onclick = e => { const b = e.target.closest('[data-p]'); if (b) switchTo(ST.players[b.dataset.p]); };
+$('#playerList').onclick = e => { const b = e.target.closest('[data-p]'); if (b) switchTo(ST.players[b.dataset.p] || (ST.players[b.dataset.p] = blank(b.dataset.n, b.dataset.t))); };
 function switchTo(p) {
   audio(); stopMusic();
   P = p; ST.cur = pkey(P.name);
@@ -423,7 +432,7 @@ function switchTo(p) {
   renderBoard(); renderTray(); $('#score').textContent = P.score; $('#best').textContent = `👑 ${P.best}`;
   startMusic();
   const k = pkey(P.name);
-  play(k === 'margot' ? 'v-hello-margot' : k === 'manon' ? 'v-hello-manon' : 'v-hello', 1);
+  play(['margot', 'manon', 'dad'].includes(k) ? `v-hello-${k}` : 'v-hello', 1);
   setTimeout(checkOver, 300);
 }
 $('#goBtn').onclick = () => {
@@ -433,6 +442,7 @@ $('#goBtn').onclick = () => {
   switchTo(ST.players[k] || (ST.players[k] = blank(name, pickTheme)));
 };
 $('#whoBtn').onclick = showPlayers;
+$('#themeBtn').onclick = () => { audio(); P.theme = P.theme === 'gothic' ? 'sparkle' : 'gothic'; stopMusic(); applyTheme(); renderBoard(); renderTray(); save(); startMusic(); play('v-hello', 0.9); };
 $('#musicBtn').onclick = () => { audio(); ST.music = !ST.music; $('#musicBtn').style.opacity = ST.music ? 1 : 0.4; save(); if (ST.music) startMusic(); else stopMusic(); };
 function applyTheme() {
   document.body.classList.toggle('gothic', P.theme === 'gothic');
