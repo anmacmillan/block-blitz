@@ -41,6 +41,10 @@ GSFX = {
     'g-fanfare': ('a short dramatic gothic pipe organ flourish, triumphant and spooky', 2.2),
     'g-gameover': ('a slow music box playing a sweet, slightly spooky lullaby that winds down', 2.4),
 }
+BOSS_SFX = {
+    'boss-roar': ('a cartoon dragon giving a big grumbly roar, funny and dramatic, not scary', 2.0),
+    'boss-attack': ('a whoosh of dark cartoon magic flying through the air and landing with a heavy thud', 1.4),
+}
 GLINES = {
     'g-combo': 'Combo. Delightfully destructive.', 'g-supercombo': 'A super combo. I am almost smiling.',
     'g-double': 'Two at once. Efficient.', 'g-amazing': 'Magnificent. Truly.', 'g-allclear': 'Everything is gone. Perfect.',
@@ -63,16 +67,31 @@ WLINES = {
     'w-end-6': "Take a breath. You've got this.", 'w-end-7': "That was some clever playing. Well done, you.",
     'w-nice-0': 'Ooh, beautiful.', 'w-nice-1': 'Look at you go!', 'w-nice-2': "Oh, that's gorgeous.",
     'w-nice-3': 'Clever.', 'w-nice-4': 'Lovely move.', 'w-nice-5': 'Mmm, very nice.',
+    'w-rank-s-1': "You've risen to the Archangels.", 'w-rank-s-2': 'Welcome to the Principalities.', 'w-rank-s-3': 'Now you are one of the Powers.',
+    'w-rank-s-4': 'The Virtues. You are shining.', 'w-rank-s-5': 'The Dominions. Higher and higher.', 'w-rank-s-6': 'The Thrones. Look how far you have come.',
+    'w-rank-s-7': 'The Cherubim. Almost at the top.', 'w-rank-s-8': 'The Seraphim. The very highest of all. You did it.',
+    'w-rank-g-1': 'A Wraith now. Rather elegant.', 'w-rank-g-2': 'A Raven. Clever and dark.', 'w-rank-g-3': 'A Banshee. Wonderfully eerie.',
+    'w-rank-g-4': 'A Gargoyle. Strong as stone.', 'w-rank-g-5': 'A Vampire. Ooh, impressive.', 'w-rank-g-6': 'A Necromancer. Very powerful.',
+    'w-rank-g-7': 'A Lich. Nearly at the top.', 'w-rank-g-8': 'Queen of the Night. You rule the darkness now. Magnificent.',
 }
 # the arcade announcer: an original voice, designed from a description
 ANN_DESC = ("A booming, energetic arcade fighting-game announcer: a deep, gravelly man's voice, dramatic and hyped, "
             "shouting short phrases with huge excitement, echoing like a stadium")
-ALINES = {
+SHOUTS = {
+    'blast': ['Blast!', 'Smash!', 'Kapow!', 'Boom!'], 'double': ['Double blast!', 'Double trouble!', 'Two at once!'],
+    'triple': ['Triple blast!', 'Hat trick!', 'Triple threat!'], 'mega': ['Mega blast!', 'Monster blast!'],
+    'combo': ['Combo!', 'Keep it going!', 'Again!'], 'supercombo': ['Super combo!', 'On fire!', 'Red hot!'],
+    'ultra': ['Ultra combo!', 'Unstoppable!', 'Spectacular!'], 'perfect': ['Perfect!', 'Flawless!'],
+}
+ALINES = {f'a-{k}-{i}': t for k, v in SHOUTS.items() for i, t in enumerate(v)}
+ALINES.update({
     'a-blast': 'Blast!', 'a-double': 'Double blast!', 'a-triple': 'Triple blast!', 'a-mega': 'Mega blast!',
     'a-combo': 'Combo!', 'a-supercombo': 'Super combo!', 'a-ultra': 'Ultra combo!', 'a-perfect': 'Perfect!',
     'a-hundred': 'One hundred!', 'a-thousand': 'One thousand! Incredible!', 'a-unstoppable': 'Unstoppable!',
     'a-legend': 'Ten thousand! Legendary!', 'a-record': 'New record!', 'a-trophy': 'Trophy unlocked!',
-}
+    'a-rankup': 'Rank up!', 'a-ascend': 'Ascension complete!',
+    'a-boss': 'Here comes the boss!', 'a-bossdown': 'Boss defeated!',
+})
 MUSIC = ("A seamless looping instrumental for a calm, happy children's puzzle game: soft marimba, celesta and gentle "
          "synth pads, light and dreamy, medium-slow tempo, sparkly, relaxing, no vocals, no drums")
 
@@ -115,6 +134,10 @@ if __name__ == '__main__':
             'generated_voice_id': pv['previews'][0]['generated_voice_id']}))
         vf.write_text(json.dumps({'goth': v['voice_id'], 'previews': [p['generated_voice_id'] for p in pv['previews']]})); print('designed the gothic voice')
     GOTH = json.loads(vf.read_text())['goth']
+    for name, (prompt, secs) in BOSS_SFX.items():
+        f = OUT / f'{name}.mp3'
+        if f.exists(): continue
+        f.write_bytes(post('/sound-generation', {'text': prompt, 'duration_seconds': secs, 'prompt_influence': 0.5})); print('sfx', name)
     for name, (prompt, secs) in GSFX.items():
         f = OUT / f'{name}.mp3'
         if f.exists(): continue

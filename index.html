@@ -33,6 +33,30 @@
   .best { font-size: 20px; font-weight: 800; color: var(--gold); display: flex; align-items: center; gap: 6px; }
   .icons { display: flex; gap: 8px; }
   .icon { width: 44px; height: 44px; border-radius: 14px; border: 0; background: rgba(255,255,255,.1); color: #fff; font-size: 21px; }
+  #aura { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1.5s;
+    background: radial-gradient(ellipse at 50% -10%, rgba(255,214,120,.75), rgba(255,180,90,.25) 40%, transparent 70%); }
+  body.gothic #aura { background: radial-gradient(circle at 78% 8%, rgba(200,20,50,.85), rgba(120,10,40,.35) 22%, transparent 55%); }
+  #boss { position: fixed; z-index: 15; right: 14px; top: 120px; display: none; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 18px;
+    background: rgba(20,8,30,.85); box-shadow: 0 0 0 2px #ff4d6d, 0 0 30px rgba(255,60,90,.5); }
+  #boss.show { display: flex; animation: bossIn .8s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes bossIn { 0% { transform: translateX(160%) scale(.5); } 100% { transform: none; } }
+  #bossFace { font-size: 64px; filter: drop-shadow(0 0 12px rgba(255,80,80,.8)); animation: hover 2.4s ease-in-out infinite; }
+  @keyframes hover { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-8px) rotate(3deg); } }
+  #bossFace.hit { animation: bossHit .45s; } @keyframes bossHit { 0%,100% { transform: none; filter: none; } 30% { transform: translateX(-10px) scale(.9); filter: brightness(3) hue-rotate(90deg); } 60% { transform: translateX(8px); } }
+  #bossFace.attack { animation: bossAtk .6s; } @keyframes bossAtk { 0%,100% { transform: none; } 40% { transform: scale(1.4) rotate(-12deg); filter: drop-shadow(0 0 30px red); } }
+  #boss.down #bossFace { animation: bossDown .9s forwards; } @keyframes bossDown { to { transform: scale(2.2) rotate(40deg); opacity: 0; filter: brightness(4); } }
+  #boss .bi { display: flex; flex-direction: column; gap: 3px; min-width: 150px; } #boss .bi b { font-size: 15px; }
+  #boss .hp { height: 12px; border-radius: 6px; background: #3a1020; overflow: hidden; } #boss .hp i { display: block; height: 100%; background: linear-gradient(90deg, #ff4d6d, #ffb13b); transition: width .4s; }
+  #boss small { font-size: 12px; opacity: .8; }
+  .gem.curse { background: repeating-linear-gradient(45deg, #2b2536 0 6px, #3e3550 6px 12px) !important; box-shadow: inset 0 0 0 2px #7a2f5a, 0 0 10px rgba(180,40,90,.6); }
+  .gem.curse::after { content: '☁'; background: none; color: #c8a0d8; font-size: calc(var(--cell) * .4); left: 0; right: 0; top: 18%; width: auto; height: auto; text-align: center; }
+  body.gothic .gem.curse::after { content: '☠'; }
+  #rank { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; margin: -4px 0 10px; }
+  #rank .rbar { width: 150px; height: 10px; border-radius: 6px; background: rgba(255,255,255,.14); overflow: hidden; }
+  #rank .rbar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ffe27a, #ff8fc8); border-radius: 6px; transition: width .4s; }
+  body.gothic #rank .rbar i { background: linear-gradient(90deg, #c9bfae, #9b1030); }
+  #rankNext { opacity: .7; font-size: 14px; }
+  body.land #rank { margin: -2px 0 6px; }
   #score { font-size: 58px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 4px 0 rgba(0,0,0,.25); margin: 2px 0 8px; transition: transform .15s; }
   #score.bump { transform: scale(1.12); }
   #board { position: relative; width: calc(var(--cell) * 8 + 16px); height: calc(var(--cell) * 8 + 16px); padding: 8px; border-radius: 18px;
@@ -84,8 +108,8 @@
   .look.on { box-shadow: inset 0 0 0 3px var(--gold); } .look.shut { opacity: .6; }
   .look .sw { grid-row: 1 / 3; display: flex; gap: 3px; } .look .sw i { width: 14px; height: 26px; border-radius: 4px; display: block; }
   .look b { font-size: 17px; } .look small { font-size: 13px; opacity: .85; }
-  .slam { position: fixed; left: 50%; top: 42%; z-index: 35; pointer-events: none; white-space: nowrap; font-weight: 900; font-style: italic;
-    font-size: clamp(44px, 9vw, 96px); letter-spacing: 2px; color: #fff; -webkit-text-stroke: 3px #3a1a00;
+  .slam { position: fixed; left: 50%; top: 42%; z-index: 35; pointer-events: none; white-space: normal; text-align: center; width: 92vw; line-height: 1.05; font-weight: 900; font-style: italic;
+    font-size: clamp(36px, 7vw, 80px); letter-spacing: 2px; color: #fff; -webkit-text-stroke: 3px #3a1a00;
     background: linear-gradient(#fff6a8, #ffb13b 55%, #ff4d4d); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     filter: drop-shadow(0 6px 0 rgba(0,0,0,.45)); animation: slam 1.25s cubic-bezier(.2,1.6,.4,1) forwards; }
   body.gothic .slam { background: linear-gradient(#f2e6dc, #c9bfae 50%, #9b1030); -webkit-background-clip: text; background-clip: text; font-family: Georgia, serif; }
@@ -112,7 +136,10 @@
     <button class="icon" id="newBtn" title="New game">↻</button>
   </div>
 </header>
+<div id="aura"></div>
+<div id="boss"><div id="bossFace">🐉</div><div class="bi"><b id="bossName">Boss</b><div class="hp"><i id="bossHp"></i></div><small id="bossHpTxt"></small><small>Clear lines to defeat it!</small></div></div>
 <div id="score">0</div>
+<div id="rank"><span id="rankName">😇 Angels</span><div class="rbar"><i id="rankFill"></i></div><span id="rankNext"></span></div>
 <div id="play">
 <div id="board"></div>
 <div id="tip" style="display:none;font-weight:800;font-size:18px;margin:10px 0 0;color:var(--gold);text-align:center">Fill a whole row or column to blast it! 💥</div>
@@ -144,11 +171,11 @@
 </div></div>
 
 <div id="dbg" style="position:fixed;left:8px;right:8px;top:2px;z-index:99;font:12px/1.3 ui-monospace,monospace;color:#9f9;pointer-events:none;white-space:normal"></div>
-<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v13</div>
+<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v15</div>
 <div id="err" style="position:fixed;left:8px;right:8px;bottom:8px;z-index:99;display:none;background:#b3123a;color:#fff;font:14px/1.3 system-ui;padding:8px 10px;border-radius:10px"></div>
 <script>
 // diagnostics: add ?debug=1 to the address to see what the iPad reports
-const BUILD = 'v13';
+const BUILD = 'v15';
 const DEBUG = /[?&]debug=1/.test(location.search);
 const dbgCounts = {};
 let dbgLast = '';
@@ -200,7 +227,7 @@ const progressNow = () => (unlockBy() === 'clocks' ? ttbClocks : (P.trophies || 
 const looksFor = () => LOOKS[P.theme] || LOOKS.sparkle;
 const isOpen = l => progressNow() >= lookNeed(l);
 const currentLook = () => looksFor().find(l => l.id === (P.look && P.look[P.theme]) && isOpen(l)) || looksFor()[0];
-const col = i => currentLook().colours[i % 8];
+const col = i => (i === 8 ? '#3a3448' : currentLook().colours[i % 8]);
 async function fetchClocks() {
   try {
     const r = await fetch(CLOUD + 'TTBKIDS/' + pkey(P.name) + '.json', { cache: 'no-store' });
@@ -221,7 +248,7 @@ function checkUnlocks() {
 const TROPHIES = [
   ['blast1', '💥', 'First blast'], ['double', '✌️', 'Two lines at once'], ['triple', '🔥', 'Three lines at once'],
   ['combo4', '⚡', 'Combo ×4'], ['allclear', '✨', 'All clear'], ['s500', '🥉', '500 points'], ['s1000', '🥈', '1,000 points'],
-  ['s3000', '🥇', '3,000 points'], ['s10000', '👑', '10,000 points'], ['best', '📈', 'Beat your best'], ['games10', '🎮', '10 games'],
+  ['s3000', '🥇', '3,000 points'], ['s10000', '👑', '10,000 points'], ['best', '📈', 'Beat your best'], ['games10', '🎮', '10 games'], ['boss', '⚔️', 'Beat the boss'], ['top', '🌈', 'Reached the top'],
 ].map(([id, e, name]) => ({ id, e, name }));
 function award(id) {
   P.trophies = P.trophies || [];
@@ -302,12 +329,22 @@ let AC = null, CLIPS = new Set(); const BUF = new Map();
 const CLIPS_READY = fetch('sounds/manifest.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : []).then(k => { CLIPS = new Set(k); }).catch(() => {});
 function audio() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); dbg('audio-made'); } catch (e) { dbg('audio-fail'); } } if (AC && AC.state !== 'running') { try { AC.resume(); } catch (e) {} } }
 const clip = k => { if (!BUF.has(k)) BUF.set(k, fetch(`sounds/${k}.mp3`).then(r => r.arrayBuffer()).then(b => new Promise((res, rej) => AC.decodeAudioData(b, res, rej))).catch(() => null)); return BUF.get(k); };
+// voices never talk over each other: a voice line waits its turn, and the gentle narrator skips if someone is talking
+let voiceUntil = 0;
 async function play(keys, vol = 0.9) {
   if (!S.sound || !AC) return;
   await CLIPS_READY;
-  keys = [].concat(keys).map(k => k.startsWith('w-') || k.startsWith('a-') ? k : k.startsWith('v-') ? TH().v + k.slice(2) : TH().fx + k).filter(k => CLIPS.has(k));
+  const items = [].concat(keys).map(k => ({ voice: /^(a|w|v)-/.test(k), soft: k.startsWith('w-'),
+    name: k.startsWith('w-') || k.startsWith('a-') ? k : k.startsWith('v-') ? TH().v + k.slice(2) : TH().fx + k })).filter(x => CLIPS.has(x.name));
   let t = AC.currentTime + 0.02;
-  for (const k of keys) { const b = await clip(k); if (!b) continue; const s = AC.createBufferSource(), g = AC.createGain(); g.gain.value = vol; s.buffer = b; s.connect(g).connect(AC.destination); s.start(t); t += b.duration + 0.05; }
+  for (const x of items) {
+    if (x.voice && x.soft && voiceUntil > AC.currentTime + 0.15) continue;
+    const b = await clip(x.name); if (!b) continue;
+    const start = x.voice ? Math.max(t, voiceUntil + 0.08) : t;
+    const src = AC.createBufferSource(), g = AC.createGain(); g.gain.value = vol; src.buffer = b; src.connect(g).connect(AC.destination); src.start(start);
+    if (x.voice) voiceUntil = start + b.duration;
+    t = start + b.duration + 0.05;
+  }
 }
 
 // music streams through the iPad's own audio player (light on memory); 🎵 cycles through the tracks
@@ -352,7 +389,7 @@ function renderBoard() {
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
     const d = cells[r][c], v = board[r][c];
     const g = d.querySelector('.gem');
-    if (v != null && !g) { const e = document.createElement('div'); e.className = 'gem'; e.style.setProperty('--c', col(v)); d.appendChild(e); }
+    if (v != null && !g) { const e = document.createElement('div'); e.className = 'gem' + (v === 8 ? ' curse' : ''); e.style.setProperty('--c', col(v)); d.appendChild(e); }
     else if (v != null && g) g.style.setProperty('--c', col(v));
     else if (v == null && g && !g.classList.contains('pop')) g.remove();
   }
@@ -526,20 +563,20 @@ function place(i, p, r0, c0) {
     const mid = cells[rows.length ? rows[0] : 3][cols.length ? cols[0] : 3].getBoundingClientRect();
     floatText(`+${pts}`, mid.left + mid.width / 2, mid.top, '');
     const cheer = null;
-    if (S.combo >= 5) bigMoment(`ULTRA COMBO ×${S.combo}!`, 'a-ultra', 140);
-    else if (lines >= 4) bigMoment('MEGA BLAST!', 'a-mega', 150);
-    else if (lines === 3) bigMoment('TRIPLE BLAST!', 'a-triple', 120);
-    else if (S.combo >= 3) bigMoment(`SUPER COMBO ×${S.combo}!`, 'a-supercombo', 110);
-    else if (lines === 2) bigMoment('DOUBLE BLAST!', 'a-double', 95);
-    else if (S.combo === 2) bigMoment('COMBO!', 'a-combo', 80);
-    else bigMoment('BLAST!', 'a-blast', 60);
+    if (S.combo >= 5) shout('ultra', ` ×${S.combo}`, 140);
+    else if (lines >= 4) shout('mega', '', 150);
+    else if (lines === 3) shout('triple', '', 120);
+    else if (S.combo >= 3) shout('supercombo', ` ×${S.combo}`, 110);
+    else if (lines === 2) shout('double', '', 95);
+    else if (S.combo === 2) shout('combo', '', 80);
+    else shout('blast', '', 60);
+    if (BOSS.on) hitBoss(lines + (S.combo >= 3 ? 1 : 0));
     play(['clear' + Math.min(lines, 3)], 0.8);
     if (P.theme === 'gothic') for (let b = 0; b < lines; b++) setTimeout(bat, b * 160);
     if (cheer) setTimeout(() => play(cheer, 1), 350);
-    else if (Math.random() < 0.25) setTimeout(() => play(`w-nice-${Math.floor(Math.random() * 6)}`, 0.9), 450);
     // a completely empty board is worth a big bonus
     setTimeout(() => {
-      if (board.every(row => row.every(x => x == null))) { addScore(300); floatText('All clear! +300', innerWidth / 2, innerHeight / 2, 'combo'); setTimeout(() => bigMoment('PERFECT!', 'a-perfect', 180), 500); award('allclear'); }
+      if (board.every(row => row.every(x => x == null))) { addScore(300); floatText('All clear! +300', innerWidth / 2, innerHeight / 2, 'combo'); setTimeout(() => shout('perfect', '', 180), 500); award('allclear'); }
     }, 420);
   } else S.combo = 0;
   addScore(gained);
@@ -547,11 +584,12 @@ function place(i, p, r0, c0) {
   if (freshSet) tray = newTray();
   renderTray(freshSet);
   S.board = board; S.tray = tray; save();
-  setTimeout(checkOver, lines ? 500 : 150);
+  setTimeout(bossTurn, 600);
+  setTimeout(checkOver, lines ? 900 : 800);
 }
 let bestBeaten = false, startBest = 0;
 function addScore(n) {
-  S.score += n;
+  S.score += n; checkRank();
   const el = $('#score'); el.textContent = S.score; el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 150);
   if (S.score > startBest && startBest > 0 && !bestBeaten) { bestBeaten = true; setTimeout(() => bigMoment('NEW RECORD!', 'a-record', 160), 600); }
   if (S.score > S.best) { S.best = S.score; }
@@ -569,7 +607,10 @@ function addScore(n) {
 }
 function checkOver() {
   if (over || tray.filter(Boolean).some(p => fitsAnywhere(SHAPES[p.s]))) return;
-  over = true;
+  endGame(false);
+}
+function endGame(summit) {
+  over = true; BOSS.on = false; $('#boss').classList.remove('show');
   S.games++;
   if (S.games >= 10) award('games10');
   S.hist = [...(S.hist || []), { s: S.score, t: Date.now() }].slice(-40);
@@ -579,6 +620,8 @@ function checkOver() {
   const recent = S.hist.slice(-10), max = Math.max(...recent.map(x => x.s), 1);
   $('#overCard').innerHTML = `<h2>${wasBest ? 'A new best! 👑' : 'Great game! 🌟'}</h2>
     <div class="big">${final}</div>
+    <p>${summit ? 'You finished at the very top:' : 'You climbed to'} <b>${ranks()[rankOf(final)][2]} ${ranks()[rankOf(final)][1]}</b></p>
+    <p><small class="n">Highest ever: ${ranks()[(P.topRank || {})[P.theme] || 0][2]} ${ranks()[(P.topRank || {})[P.theme] || 0][1]}</small></p>
     <p>👑 Best: <b>${S.best}</b> &nbsp;·&nbsp; 🎮 Games: <b>${S.games}</b></p>
     <div class="hist">${recent.map(x => `<div style="height:${Math.round(x.s / max * 100)}%"></div>`).join('')}</div><small class="n">Your last ${recent.length} game${recent.length > 1 ? 's' : ''}</small>
     <div><button class="btn" id="againBtn">Play again</button></div>`;
@@ -588,10 +631,11 @@ function checkOver() {
 function newGame() {
   board = Array.from({ length: N }, () => Array(N).fill(null));
   S.score = 0; S.combo = 0; over = false; bestBeaten = false; startBest = S.best;
+  Object.assign(BOSS, { on: false, beaten: false, hp: 0 }); $('#boss').classList.remove('show'); curRank = 0;
   tray = newTray(); S.board = board; S.tray = tray;
   $('#score').textContent = 0;
   document.querySelectorAll('.gem').forEach(g => g.closest('#board') && g.remove());
-  renderBoard(); renderTray(); save();
+  renderBoard(); renderTray(); renderRank(); save();
 }
 
 // ---------- sparkles and floating words ----------
@@ -610,6 +654,17 @@ function bat() {
   e.style.left = x + 'px'; e.style.top = y + 'px'; document.body.appendChild(e);
   const dx = (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 200);
   e.animate([{ transform: 'translate(0,0) scale(.5)', opacity: 0 }, { transform: `translate(${dx * 0.3}px, -40px) scale(1)`, opacity: 1, offset: 0.25 }, { transform: `translate(${dx}px, -260px) scale(.7)`, opacity: 0 }], { duration: 1400, easing: 'ease-in' }).onfinish = () => e.remove();
+}
+// the announcer's shouts: several for each moment, the words on screen match the voice
+const SHOUTS = {
+  blast: ['BLAST!', 'SMASH!', 'KAPOW!', 'BOOM!'], double: ['DOUBLE BLAST!', 'DOUBLE TROUBLE!', 'TWO AT ONCE!'],
+  triple: ['TRIPLE BLAST!', 'HAT TRICK!', 'TRIPLE THREAT!'], mega: ['MEGA BLAST!', 'MONSTER BLAST!'],
+  combo: ['COMBO!', 'KEEP IT GOING!', 'AGAIN!'], supercombo: ['SUPER COMBO!', 'ON FIRE!', 'RED HOT!'],
+  ultra: ['ULTRA COMBO!', 'UNSTOPPABLE!', 'SPECTACULAR!'], perfect: ['PERFECT!', 'FLAWLESS!'],
+};
+function shout(kind, extra, confettiN) {
+  const list = SHOUTS[kind], i = Math.floor(Math.random() * list.length);
+  bigMoment(list[i] + (extra || ''), `a-${kind}-${i}`, confettiN);
 }
 // big moments: giant words, the announcer, a shake and confetti
 let slamAt = 0;
@@ -652,6 +707,91 @@ async function restoreMine() {
   } catch (e) {}
   cloudSave();
 }
+// ---------- the ascent: every game climbs a hierarchy, and the top is the finish line ----------
+const RANKS = {
+  sparkle: [[0, 'Angels', '😇'], [200, 'Archangels', '👼'], [500, 'Principalities', '🕊️'], [1000, 'Powers', '⚡'], [1700, 'Virtues', '🌟'],
+            [2600, 'Dominions', '👑'], [3800, 'Thrones', '🔥'], [5200, 'Cherubim', '🪽'], [Infinity, 'Seraphim', '☀️']],
+  gothic: [[0, 'Shadow', '🌑'], [200, 'Wraith', '👻'], [500, 'Raven', '🐦‍⬛'], [1000, 'Banshee', '🌫️'], [1700, 'Gargoyle', '🗿'],
+           [2600, 'Vampire', '🧛'], [3800, 'Necromancer', '💀'], [5200, 'Lich', '☠️'], [Infinity, 'Queen of the Night', '🌙']],
+};
+const ranks = () => RANKS[P.theme] || RANKS.sparkle;
+const rankOf = sc => { let i = 0; ranks().forEach(([t], k) => { if (sc >= t) i = k; }); return BOSS.beaten ? ranks().length - 1 : i; };
+function renderRank() {
+  const R = ranks(), i = rankOf(S.score || 0), [t, name, e] = R[i], next = R[i + 1];
+  $('#rankName').textContent = `${e} ${name}`;
+  $('#rankFill').style.width = next ? Math.round(((S.score - t) / (next[0] - t)) * 100) + '%' : '100%';
+  $('#rankNext').textContent = !next ? 'The very top! ✨' : next[0] === Infinity ? (BOSS.on ? `${next[2]} Beat the boss!` : '') : `${next[2]} ${(next[0] - S.score).toLocaleString('en-GB')} to go`;
+  if (next && next[0] === Infinity) $('#rankFill').style.width = BOSS.on ? Math.round((1 - BOSS.hp / BOSS.max) * 100) + '%' : '0%';
+  $('#aura').style.opacity = (i / (R.length - 1)) * 0.9;
+}
+let curRank = 0;
+function checkRank() {
+  const b = rankOf(S.score);
+  renderRank();
+  if (b <= curRank) return;
+  curRank = b;
+  const [, name, e] = ranks()[b], top = b === ranks().length - 1;
+  P.topRank = P.topRank || {}; if (b > (P.topRank[P.theme] || 0)) { P.topRank[P.theme] = b; save(); }
+  setTimeout(() => {
+    bigMoment(`${e} ${name.toUpperCase()}!`, top ? 'a-ascend' : 'a-rankup', top ? 260 : 150);
+    setTimeout(() => play(`w-rank-${P.theme === 'gothic' ? 'g' : 's'}-${b}`, 1), 1100);
+    if (top) { award('top'); setTimeout(showSummit, 2600); }
+    if (b === ranks().length - 2 && !BOSS.on && !BOSS.beaten) setTimeout(startBoss, 2600);
+  }, 1500);
+}
+
+// ---------- the final boss: appears at the second-highest rank; clear lines to beat it ----------
+const BOSSES = { sparkle: { e: '🐉', name: 'Grumble the Storm Dragon' }, gothic: { e: '🧛', name: 'Count Gloom' } };
+const BOSS = { on: false, beaten: false, hp: 0, max: 10, moves: 0 };
+function startBoss() {
+  if (over) return;
+  Object.assign(BOSS, { on: true, hp: 10, max: 10, moves: 0 });
+  const B = BOSSES[P.theme] || BOSSES.sparkle;
+  $('#bossFace').textContent = B.e; $('#bossName').textContent = B.name;
+  $('#boss').classList.add('show'); renderBoss(); renderRank();
+  bigMoment('HERE COMES THE BOSS!', 'a-boss', 40); play('boss-roar', 0.9);
+}
+function renderBoss() {
+  $('#bossHp').style.width = Math.max(0, BOSS.hp / BOSS.max * 100) + '%';
+  $('#bossHpTxt').textContent = `${Math.max(0, BOSS.hp)} / ${BOSS.max}`;
+}
+function hitBoss(dmg) {
+  BOSS.hp -= dmg; renderBoss(); renderRank();
+  const f = $('#bossFace'); f.classList.remove('hit'); void f.offsetWidth; f.classList.add('hit');
+  if (BOSS.hp <= 0) {
+    BOSS.on = false; BOSS.beaten = true;
+    $('#boss').classList.add('down');
+    setTimeout(() => { $('#boss').classList.remove('show', 'down'); bigMoment('BOSS DEFEATED!', 'a-bossdown', 260); award('boss'); addScore(1000); }, 900);
+  }
+}
+// every third move, the boss hurls two cursed blocks onto empty squares
+function bossTurn() {
+  if (!BOSS.on || over) return;
+  BOSS.moves++;
+  if (BOSS.moves % 3) return;
+  const empty = []; for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (board[r][c] == null) empty.push([r, c]);
+  const f = $('#bossFace'); f.classList.remove('attack'); void f.offsetWidth; f.classList.add('attack');
+  play('boss-attack', 0.9);
+  for (let k = 0; k < 2 && empty.length > 6; k++) {
+    const [r, c] = empty.splice(Math.floor(Math.random() * empty.length), 1)[0];
+    setTimeout(() => {
+      board[r][c] = 8; renderBoard();
+      const g = cells[r][c].querySelector('.gem'); if (g) { g.classList.add('curse', 'land'); }
+      S.board = board; save();
+    }, 350 + k * 180);
+  }
+}
+function showSummit() {
+  const [, name, e] = ranks()[ranks().length - 1];
+  $('#overCard').innerHTML = `<h2>${e} You reached the top!</h2>
+    <p style="font-size:22px"><b>${name}</b>${P.theme === 'gothic' ? ', ruler of the dark.' : ', the highest choir of all.'}</p>
+    <div class="big">${S.score.toLocaleString('en-GB')}</div>
+    <p>The climb is complete. Stop here as a champion, or keep going for the highest score you can.</p>
+    <div><button class="btn" id="keepBtn">Keep going</button><button class="btn ghost" id="endBtn">Finish here</button></div>`;
+  $('#over').classList.add('show'); confetti(200);
+  $('#keepBtn').onclick = () => $('#over').classList.remove('show');
+  $('#endBtn').onclick = () => { $('#over').classList.remove('show'); over = false; endGame(true); };
+}
 function showTip() { $('#tip').style.display = P.blasted ? 'none' : ''; }
 function floatText(txt, x, y, cls) {
   const f = document.createElement('div'); f.className = 'float ' + cls; f.textContent = txt;
@@ -685,7 +825,8 @@ function switchTo(p) {
   P = p; ST.cur = pkey(P.name);
   board = P.board || Array.from({ length: N }, () => Array(N).fill(null)); tray = P.tray || newTray(); P.board = board; P.tray = tray;
   over = false; bestBeaten = false; startBest = P.score ? 0 : P.best;
-  applyTheme(); save(); showTip(); ttbClocks = null; fetchClocks(); restoreMine();
+  Object.assign(BOSS, { on: false, beaten: false, hp: 0 }); $('#boss').classList.remove('show');
+  curRank = rankOf(P.score || 0); applyTheme(); renderRank(); save(); showTip(); ttbClocks = null; fetchClocks(); restoreMine();
   $('#hello').classList.remove('show');
   document.querySelectorAll('#board .gem').forEach(g => g.remove());
   renderBoard(); renderTray(); $('#score').textContent = P.score; $('#best').textContent = `👑 ${P.best}`;
@@ -702,7 +843,7 @@ $('#goBtn').onclick = () => {
 };
 $('#whoBtn').onclick = showPlayers;
 $('#shelfBtn').onclick = () => { audio(); showShelf(); };
-$('#themeBtn').onclick = () => { audio(); P.theme = P.theme === 'gothic' ? 'sparkle' : 'gothic'; stopMusic(); applyTheme(); renderBoard(); renderTray(); save(); startMusic(); play('v-hello', 0.9); };
+$('#themeBtn').onclick = () => { audio(); P.theme = P.theme === 'gothic' ? 'sparkle' : 'gothic'; stopMusic(); applyTheme(); renderBoard(); renderTray(); renderRank(); save(); startMusic(); play('v-hello', 0.9); };
 $('#musicBtn').onclick = () => {
   audio();
   const i = TRACKS.findIndex(x => x[0] === (ST.track || 'off'));
@@ -724,7 +865,7 @@ sizeBoard(); buildBoard();
 if (!tray) tray = newTray();
 applyTheme(); musicIcon();
 $('#score').textContent = S.score || 0; $('#best').textContent = `👑 ${S.best || 0}`; $('#soundBtn').textContent = ST.sound ? '🔊' : '🔈';
-renderBoard(); renderTray(); showTip();
+renderBoard(); renderTray(); showTip(); curRank = rankOf(S.score || 0); renderRank();
 if (P.name) fetchClocks();
 if (!P.name) showPlayers();
 else {
@@ -745,7 +886,7 @@ $('#tapStart').addEventListener('touchend', tapGo, { passive: false });
 setTimeout(checkOver, 300);
 document.title = 'Block Blitz';
 if (DEBUG) { document.getElementById('dbg').textContent = BUILD + ' · debug on · ' + navigator.userAgent.slice(0, 120); }
-window.__sb = { get S() { return P; }, get ST() { return ST; }, get board() { return board; }, get tray() { return tray; }, place: (i, r, c) => place(i, tray[i], r, c), fits: (i, r, c) => fits(SHAPES[tray[i].s], r, c) };
+window.__sb = { get boss() { return BOSS; }, hit: d => hitBoss(d), bossTurn: () => bossTurn(), add: n => addScore(n), get S() { return P; }, get ST() { return ST; }, get board() { return board; }, get tray() { return tray; }, place: (i, r, c) => place(i, tray[i], r, c), fits: (i, r, c) => fits(SHAPES[tray[i].s], r, c) };
 </script>
 </body>
 </html>
