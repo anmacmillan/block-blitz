@@ -78,7 +78,7 @@ WLINES = {
 ANN_DESC = ("A booming, energetic arcade fighting-game announcer: a deep, gravelly man's voice, dramatic and hyped, "
             "shouting short phrases with huge excitement, echoing like a stadium")
 SHOUTS = {
-    'blast': ['Blast!', 'Smash!', 'Kapow!', 'Boom!'], 'double': ['Double blast!', 'Double trouble!', 'Two at once!'],
+    'blast': ['Blast!', 'Smash!', 'Pow!', 'Boom!'], 'double': ['Double blast!', 'Double trouble!', 'Two at once!'],
     'triple': ['Triple blast!', 'Hat trick!', 'Triple threat!'], 'mega': ['Mega blast!', 'Monster blast!'],
     'combo': ['Combo!', 'Keep it going!', 'Again!'], 'supercombo': ['Super combo!', 'On fire!', 'Red hot!'],
     'ultra': ['Ultra combo!', 'Unstoppable!', 'Spectacular!'], 'perfect': ['Perfect!', 'Flawless!'],
