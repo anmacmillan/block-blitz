@@ -114,8 +114,22 @@
   <button class="btn" id="yesNew">New game</button><button class="btn ghost" id="noNew">Keep playing</button>
 </div></div>
 
+<div id="dbg" style="position:fixed;left:8px;right:8px;top:2px;z-index:99;font:12px/1.3 ui-monospace,monospace;color:#9f9;pointer-events:none;white-space:normal"></div>
+<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v4</div>
 <div id="err" style="position:fixed;left:8px;right:8px;bottom:8px;z-index:99;display:none;background:#b3123a;color:#fff;font:14px/1.3 system-ui;padding:8px 10px;border-radius:10px"></div>
 <script>
+// diagnostics: add ?debug=1 to the address to see what the iPad reports
+const BUILD = 'v4';
+const DEBUG = /[?&]debug=1/.test(location.search);
+const dbgCounts = {};
+function dbg(name, extra) {
+  if (!DEBUG) return;
+  dbgCounts[name] = (dbgCounts[name] || 0) + 1;
+  const d = document.getElementById('dbg'); if (!d) return;
+  d.textContent = `${BUILD} · ${Object.entries(dbgCounts).map(([k, v]) => k + ' ' + v).join(' · ')}${extra ? ' · ' + extra : ''}`;
+}
+if (DEBUG) for (const t of ['touchstart', 'touchmove', 'touchend', 'touchcancel', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'click'])
+  document.addEventListener(t, e => dbg(t, (e.target && e.target.className ? 'on ' + String(e.target.className).slice(0, 18) : '') + (t === 'touchstart' ? ' at ' + Math.round(e.touches[0].clientX) + ',' + Math.round(e.touches[0].clientY) : '')), { capture: true, passive: true });
 window.addEventListener('error', e => { const d = document.getElementById('err'); d.style.display = 'block'; d.textContent = 'Oops: ' + e.message + ' (line ' + e.lineno + ')'; });
 window.addEventListener('unhandledrejection', e => { const d = document.getElementById('err'); d.style.display = 'block'; d.textContent = 'Oops: ' + (e.reason && e.reason.message || e.reason); });
 </script>
@@ -268,6 +282,7 @@ const LIFT = () => parseFloat(getComputedStyle(document.documentElement).getProp
 // iPads get native touch events (the most reliable on Safari's engine); mouse and pen use pointer events
 const pt = e => (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]) || e;
 function beginDrag(el, e) {
+  dbg('beginDrag', 'el ' + !!el + ' over ' + over + ' drag ' + !!drag);
   if (!el || over || drag) return;
   audio();
   const i = +el.dataset.i, p = tray[i]; if (!p) return;
@@ -305,6 +320,7 @@ function moveDrag(e) {
 }
 function clearGhost() { document.querySelectorAll('.sq.ghost, .sq.willclear').forEach(q => q.classList.remove('ghost', 'willclear')); }
 function dropDrag() {
+  dbg('drop', drag && drag.pos ? 'at ' + drag.pos : 'no fit');
   const { i, p, el, pos } = drag; drag = null;
   $('#drag').innerHTML = ''; clearGhost();
   if (!pos) { el.style.opacity = 1; return; }
@@ -500,6 +516,7 @@ $('#tapStart').addEventListener('click', tapGo);
 $('#tapStart').addEventListener('touchend', tapGo, { passive: false });
 setTimeout(checkOver, 300);
 document.title = 'Block Blitz';
+if (DEBUG) { document.getElementById('dbg').textContent = BUILD + ' · debug on · ' + navigator.userAgent.slice(0, 120); }
 window.__sb = { get S() { return P; }, get ST() { return ST; }, get board() { return board; }, get tray() { return tray; }, place: (i, r, c) => place(i, tray[i], r, c), fits: (i, r, c) => fits(SHAPES[tray[i].s], r, c) };
 </script>
 </body>
