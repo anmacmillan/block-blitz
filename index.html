@@ -115,11 +115,11 @@
 </div></div>
 
 <div id="dbg" style="position:fixed;left:8px;right:8px;top:2px;z-index:99;font:12px/1.3 ui-monospace,monospace;color:#9f9;pointer-events:none;white-space:normal"></div>
-<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v5</div>
+<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v6</div>
 <div id="err" style="position:fixed;left:8px;right:8px;bottom:8px;z-index:99;display:none;background:#b3123a;color:#fff;font:14px/1.3 system-ui;padding:8px 10px;border-radius:10px"></div>
 <script>
 // diagnostics: add ?debug=1 to the address to see what the iPad reports
-const BUILD = 'v5';
+const BUILD = 'v6';
 const DEBUG = /[?&]debug=1/.test(location.search);
 const dbgCounts = {};
 let dbgLast = '';
@@ -164,8 +164,9 @@ const WEIGHT = SHAPES.map(s => s.length <= 2 ? 3 : s.length <= 4 ? 4 : s.length 
 
 // ---------- saved state (on the iPad, and a copy in the cloud) ----------
 const KEY = 'bb:v1';
-let ST = { players: {}, cur: null, sound: true, music: true };
+let ST = { players: {}, cur: null, sound: true, music: false };
 try { const v = JSON.parse(localStorage.getItem(KEY)); if (v) ST = { ...ST, ...v }; } catch (e) {}
+if (!ST.musicAsked) { ST.music = false; ST.musicAsked = true; }    // music now starts off: it only plays if someone turns it on
 const pkey = n => n.toLowerCase().replace(/[^a-z]/g, '') || 'player';
 const blank = (name, theme) => ({ name, theme, best: 0, games: 0, board: null, tray: null, score: 0, combo: 0, hist: [] });
 let P = ST.players[ST.cur] || blank('', 'sparkle');
