@@ -29,6 +29,7 @@ LINES = {
     'v-greatbest': 'What a game! A brand new best score!', 'v-greatgame': "Great game! Let's play again!",
     'v-hello-margot': "Hello Margot! Let's make some sparkles!", 'v-hello': "Hello! Let's make some sparkles!",
     'v-hello-manon': "Hello Manon! Let's make some sparkles!", 'v-hello-dad': "Hello Dad! Let's make some sparkles!",
+    'v-trophy': 'A new trophy! Well done!', 'v-unlock': 'Ooh! New blocks to play with!',
 }
 # Nevermore: Manon's gothic theme. Deadpan, but always kind.
 GSFX = {
@@ -46,11 +47,32 @@ GLINES = {
     'g-newbest': 'A new best score. Darkly magnificent.', 'g-greatbest': 'A new record. I knew you had it in you.',
     'g-greatgame': 'A worthy game. Again?', 'g-hello-manon': 'Hello, Manon. Shall we destroy some blocks?',
     'g-hello-margot': 'Hello, Margot. Shall we destroy some blocks?', 'g-hello': 'Hello. Shall we destroy some blocks?', 'g-hello-dad': 'Hello, Dad. Shall we destroy some blocks?',
+    'g-trophy': 'A trophy. How splendid.', 'g-unlock': 'New blocks. Delightfully dark.',
 }
 GMUSIC = ("A seamless looping instrumental for a gothic children's puzzle game, darkly elegant and quirky: harpsichord, "
           "pizzicato strings and soft cello, a little spooky but playful and calm, medium-slow tempo, no vocals, no drums")
 GOTH_DESC = ("A calm, deadpan young woman with a soft, clear British accent, dry and darkly witty like a gothic heroine, "
              "speaking slowly and quietly, secretly warm and approving, never mean")
+# the warm encouraging narrator: an original voice, designed from a description (not a copy of anyone)
+WARM_DESC = ("A warm, low, slightly husky American woman's voice in her thirties, smooth, relaxed and intimate, "
+             "with a gentle smile in it; kind, calm and encouraging, speaking unhurriedly")
+WLINES = {
+    'w-end-0': "You're getting better every single game.", 'w-end-1': "Mmm, that was a lovely game. Want another?",
+    'w-end-2': "I love how carefully you're thinking.", 'w-end-3': "Every game makes your brain a little stronger.",
+    'w-end-4': "You've got a real eye for this.", 'w-end-5': "Nicely done. I'm proud of you.",
+    'w-end-6': "Take a breath. You've got this.", 'w-end-7': "That was some clever playing. Well done, you.",
+    'w-nice-0': 'Ooh, beautiful.', 'w-nice-1': 'Look at you go!', 'w-nice-2': "Oh, that's gorgeous.",
+    'w-nice-3': 'Clever.', 'w-nice-4': 'Lovely move.', 'w-nice-5': 'Mmm, very nice.',
+}
+# the arcade announcer: an original voice, designed from a description
+ANN_DESC = ("A booming, energetic arcade fighting-game announcer: a deep, gravelly man's voice, dramatic and hyped, "
+            "shouting short phrases with huge excitement, echoing like a stadium")
+ALINES = {
+    'a-blast': 'Blast!', 'a-double': 'Double blast!', 'a-triple': 'Triple blast!', 'a-mega': 'Mega blast!',
+    'a-combo': 'Combo!', 'a-supercombo': 'Super combo!', 'a-ultra': 'Ultra combo!', 'a-perfect': 'Perfect!',
+    'a-hundred': 'One hundred!', 'a-thousand': 'One thousand! Incredible!', 'a-unstoppable': 'Unstoppable!',
+    'a-legend': 'Ten thousand! Legendary!', 'a-record': 'New record!', 'a-trophy': 'Trophy unlocked!',
+}
 MUSIC = ("A seamless looping instrumental for a calm, happy children's puzzle game: soft marimba, celesta and gentle "
          "synth pads, light and dreamy, medium-slow tempo, sparkly, relaxing, no vocals, no drums")
 
@@ -105,5 +127,37 @@ if __name__ == '__main__':
     f = OUT / 'g-music.mp3'
     if not f.exists():
         f.write_bytes(post('/music', {'prompt': GMUSIC, 'music_length_ms': 60000})); print('g-music')
+    wf = HERE / 'voice_warm.json'
+    if not wf.exists():
+        import base64
+        pv = json.loads(post('/text-to-voice/create-previews', {'voice_description': WARM_DESC,
+             'text': "Mmm, that was a lovely game. You're getting better every single game, and I love how carefully you're thinking. Take a breath. You've got this."}))
+        pdir = HERE / 'voice_previews'; pdir.mkdir(exist_ok=True)
+        for i, p in enumerate(pv['previews']): (pdir / f'warm-{i + 1}.mp3').write_bytes(base64.b64decode(p['audio_base_64']))
+        v = json.loads(post('/text-to-voice/create-voice-from-preview', {'voice_name': 'Block Blitz Warm', 'voice_description': WARM_DESC,
+            'generated_voice_id': pv['previews'][0]['generated_voice_id']}))
+        wf.write_text(json.dumps({'warm': v['voice_id'], 'previews': [p['generated_voice_id'] for p in pv['previews']]})); print('designed the warm voice')
+    WARM = json.loads(wf.read_text())['warm']
+    for name, text in WLINES.items():
+        f = OUT / f'{name}.mp3'
+        if f.exists(): continue
+        f.write_bytes(post(f'/text-to-speech/{WARM}?output_format=mp3_44100_128', {'text': text, 'model_id': 'eleven_multilingual_v2',
+                           'voice_settings': {'stability': 0.45, 'similarity_boost': 0.8, 'style': 0.4, 'use_speaker_boost': True}})); print('line', name)
+    af = HERE / 'voice_announcer.json'
+    if not af.exists():
+        import base64
+        pv = json.loads(post('/text-to-voice/create-previews', {'voice_description': ANN_DESC,
+             'text': 'Round one! Fight! Double blast! Super combo! Ultra combo! Perfect! New record! Unstoppable! Ten thousand! Legendary!'}))
+        pdir = HERE / 'voice_previews'; pdir.mkdir(exist_ok=True)
+        for i, p in enumerate(pv['previews']): (pdir / f'announcer-{i + 1}.mp3').write_bytes(base64.b64decode(p['audio_base_64']))
+        v = json.loads(post('/text-to-voice/create-voice-from-preview', {'voice_name': 'Block Blitz Announcer', 'voice_description': ANN_DESC,
+            'generated_voice_id': pv['previews'][0]['generated_voice_id']}))
+        af.write_text(json.dumps({'announcer': v['voice_id']})); print('designed the announcer')
+    ANN = json.loads(af.read_text())['announcer']
+    for name, text in ALINES.items():
+        f = OUT / f'{name}.mp3'
+        if f.exists(): continue
+        f.write_bytes(post(f'/text-to-speech/{ANN}?output_format=mp3_44100_128', {'text': text, 'model_id': 'eleven_multilingual_v2',
+                           'voice_settings': {'stability': 0.3, 'similarity_boost': 0.85, 'style': 0.8, 'use_speaker_boost': True}})); print('line', name)
     (OUT / 'manifest.json').write_text(json.dumps(sorted(p.stem for p in OUT.glob('*.mp3') if p.stat().st_size > 1000)))
     print('done:', len(list(OUT.glob('*.mp3'))), 'files')

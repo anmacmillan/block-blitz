@@ -75,6 +75,25 @@
   .btn { border: 0; border-radius: 18px; padding: 15px 28px; font-size: 22px; font-weight: 800; color: #3a1a00; background: linear-gradient(#ffe27a, #ffb83d); box-shadow: 0 5px 0 #c27a12; margin: 10px 6px 0; font-family: inherit; }
   .btn.ghost { background: rgba(255,255,255,.12); color: #fff; box-shadow: none; }
   input.name { font-size: 22px; padding: 10px 14px; border-radius: 14px; border: 0; width: 70%; text-align: center; font-family: inherit; margin-top: 6px; }
+  .shelf { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+  .tro { background: rgba(255,255,255,.06); border-radius: 14px; padding: 8px 4px; opacity: .55; }
+  .tro.got { opacity: 1; background: rgba(255,210,90,.16); box-shadow: inset 0 0 0 2px rgba(255,210,90,.5); }
+  .tro span { font-size: 30px; display: block; } .tro small { font-size: 12px; display: block; line-height: 1.15; }
+  .looks { display: grid; gap: 8px; margin: 8px 0; }
+  .look { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; text-align: left; align-items: center; padding: 10px 12px; border-radius: 16px; border: 0; background: rgba(255,255,255,.08); color: var(--ink); font-family: inherit; }
+  .look.on { box-shadow: inset 0 0 0 3px var(--gold); } .look.shut { opacity: .6; }
+  .look .sw { grid-row: 1 / 3; display: flex; gap: 3px; } .look .sw i { width: 14px; height: 26px; border-radius: 4px; display: block; }
+  .look b { font-size: 17px; } .look small { font-size: 13px; opacity: .85; }
+  .slam { position: fixed; left: 50%; top: 42%; z-index: 35; pointer-events: none; white-space: nowrap; font-weight: 900; font-style: italic;
+    font-size: clamp(44px, 9vw, 96px); letter-spacing: 2px; color: #fff; -webkit-text-stroke: 3px #3a1a00;
+    background: linear-gradient(#fff6a8, #ffb13b 55%, #ff4d4d); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 6px 0 rgba(0,0,0,.45)); animation: slam 1.25s cubic-bezier(.2,1.6,.4,1) forwards; }
+  body.gothic .slam { background: linear-gradient(#f2e6dc, #c9bfae 50%, #9b1030); -webkit-background-clip: text; background-clip: text; font-family: Georgia, serif; }
+  @keyframes slam { 0% { transform: translate(-50%,-50%) scale(3.2) rotate(-6deg); opacity: 0; } 18% { transform: translate(-50%,-50%) scale(.92) rotate(-3deg); opacity: 1; }
+    26% { transform: translate(-50%,-50%) scale(1.06) rotate(-3deg); } 80% { transform: translate(-50%,-50%) scale(1) rotate(-3deg); opacity: 1; } 100% { transform: translate(-50%,-80%) scale(1.1) rotate(-3deg); opacity: 0; } }
+  .conf { position: fixed; top: 0; left: 0; width: 10px; height: 14px; border-radius: 2px; z-index: 34; pointer-events: none; }
+  #board.shake { animation: shake .42s ease-out; }
+  @keyframes shake { 0%,100% { transform: none; } 20% { transform: translate(-7px, 3px) rotate(-.6deg); } 40% { transform: translate(6px, -4px) rotate(.5deg); } 60% { transform: translate(-4px, 2px); } 80% { transform: translate(2px, -1px); } }
   .hist { display: flex; gap: 5px; align-items: flex-end; justify-content: center; height: 80px; margin: 12px 0 2px; }
   .hist div { width: 16px; border-radius: 5px 5px 2px 2px; background: linear-gradient(#ffd25a, #ff7ac6); min-height: 3px; }
   small.n { opacity: .7; font-size: 13px; }
@@ -86,6 +105,7 @@
   <div id="title">BLOCK BLITZ</div>
   <div class="icons">
     <button class="who" id="whoBtn">🙂</button>
+    <button class="icon" id="shelfBtn" title="Trophies and block looks">🏆</button>
     <button class="icon" id="themeBtn" title="Change the look">🎨</button>
     <button class="icon" id="musicBtn" title="Music">🎵</button>
     <button class="icon" id="soundBtn" title="Sound">🔊</button>
@@ -115,6 +135,7 @@
   <div class="big" style="font-size:64px">▶️</div>
   <p><small class="n" id="tapSwitch">Not you? Tap the name button at the top to switch.</small></p>
 </div></div>
+<div class="overlay" id="shelf"><div class="card" id="shelfCard" style="max-height:92vh;overflow-y:auto"></div></div>
 <div class="overlay" id="over"><div class="card" id="overCard"></div></div>
 <div class="overlay" id="confirm"><div class="card">
   <h2>Start a new game?</h2>
@@ -123,11 +144,11 @@
 </div></div>
 
 <div id="dbg" style="position:fixed;left:8px;right:8px;top:2px;z-index:99;font:12px/1.3 ui-monospace,monospace;color:#9f9;pointer-events:none;white-space:normal"></div>
-<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v9</div>
+<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v11</div>
 <div id="err" style="position:fixed;left:8px;right:8px;bottom:8px;z-index:99;display:none;background:#b3123a;color:#fff;font:14px/1.3 system-ui;padding:8px 10px;border-radius:10px"></div>
 <script>
 // diagnostics: add ?debug=1 to the address to see what the iPad reports
-const BUILD = 'v9';
+const BUILD = 'v11';
 const DEBUG = /[?&]debug=1/.test(location.search);
 const dbgCounts = {};
 let dbgLast = '';
@@ -153,7 +174,88 @@ const THEMES = {
   gothic: { colours: ['#9b1030', '#5b2a9e', '#1f6b4a', '#c9bfae', '#2b2b3a', '#7a1f5c', '#b8862b', '#3d5c8a'], v: 'g-', fx: 'g-', music: 'g-music', spark: '#c9bfae', title: '🦇 BLOCK BLITZ 🦇' },
 };
 const TH = () => THEMES[P.theme] || THEMES.sparkle;
-const col = i => TH().colours[i % 8];
+// block looks: each theme has a starting look and four to unlock
+const LOOKS = {
+  sparkle: [
+    { id: 'jewels', name: 'Jewels', colours: THEMES.sparkle.colours, need: 0, tro: 0 },
+    { id: 'candy', name: 'Candy', colours: ['#ff9ec7', '#ffc6a8', '#fff2a8', '#a8f0c6', '#a8e4ff', '#c9b8ff', '#f4b8ff', '#ffb8b8'], need: 10, tro: 1 },
+    { id: 'ice', name: 'Ice palace', colours: ['#e8f7ff', '#9fdcff', '#5fb8ff', '#3d7bff', '#b8f0ff', '#d6e4ff', '#7fd4e8', '#ffffff'], need: 30, tro: 3 },
+    { id: 'galaxy', name: 'Galaxy', colours: ['#3a1c71', '#5f2c82', '#8e44ad', '#2c3e9e', '#1f9ed1', '#d76d77', '#ffaf7b', '#6a3093'], need: 60, tro: 5 },
+    { id: 'rainbow', name: 'Rainbow glitter', colours: ['#ff1744', '#ff9100', '#ffea00', '#00e676', '#00b0ff', '#651fff', '#d500f9', '#f50057'], need: 100, tro: 8 },
+  ],
+  gothic: [
+    { id: 'nevermore', name: 'Nevermore', colours: THEMES.gothic.colours, need: 0, tro: 0 },
+    { id: 'moonstone', name: 'Moonstone', colours: ['#c8cfd8', '#8a95a5', '#5c6878', '#aab4c8', '#e2e6ee', '#6f7f99', '#9aa7bd', '#3e4656'], need: 10, tro: 2 },
+    { id: 'bloodstone', name: 'Bloodstone', colours: ['#5a0a14', '#8b0f22', '#b3122a', '#2a0508', '#d8333f', '#6e1420', '#3d0c14', '#a01a2c'], need: 30, tro: 4 },
+    { id: 'poison', name: 'Poison garden', colours: ['#1b5e20', '#2e7d32', '#6a1b9a', '#4a148c', '#33691e', '#7cb342', '#9c27b0', '#004d40'], need: 60, tro: 6 },
+    { id: 'glass', name: 'Stained glass', colours: ['#b71c1c', '#0d47a1', '#1b5e20', '#f9a825', '#4a148c', '#006064', '#e65100', '#880e4f'], need: 100, tro: 9 },
+  ],
+};
+// Margot's looks unlock with the clocks she reads in Tick-Tock (her save puts the count in the cloud);
+// anyone without a Tick-Tock save unlocks them with Block Blitz trophies instead
+let ttbClocks = null;
+const unlockBy = () => (ttbClocks != null ? 'clocks' : 'trophies');
+const lookNeed = l => (unlockBy() === 'clocks' ? l.need : l.tro);
+const progressNow = () => (unlockBy() === 'clocks' ? ttbClocks : (P.trophies || []).length);
+const looksFor = () => LOOKS[P.theme] || LOOKS.sparkle;
+const isOpen = l => progressNow() >= lookNeed(l);
+const currentLook = () => looksFor().find(l => l.id === (P.look && P.look[P.theme]) && isOpen(l)) || looksFor()[0];
+const col = i => currentLook().colours[i % 8];
+async function fetchClocks() {
+  try {
+    const r = await fetch(CLOUD + 'TTBKIDS/' + pkey(P.name) + '.json', { cache: 'no-store' });
+    const d = r.ok ? await r.json() : null;
+    ttbClocks = d && typeof d.total === 'number' ? d.total : null;
+  } catch (e) {}
+  checkUnlocks();
+}
+function checkUnlocks() {
+  P.seenLooks = P.seenLooks || [];
+  const fresh = Object.values(LOOKS).flat().filter(l => l.need > 0 && !P.seenLooks.includes(l.id) && progressNow() >= lookNeed(l) && looksFor().includes(l));
+  if (!fresh.length) return;
+  fresh.forEach(l => P.seenLooks.push(l.id)); save();
+  setTimeout(() => { floatText(`New blocks: ${fresh.map(l => l.name).join(', ')}! 🎨`, innerWidth / 2, innerHeight * 0.4, 'combo'); play(['fanfare', 'v-unlock'], 1); }, 900);
+}
+
+// ---------- trophies: a fixed set to collect ----------
+const TROPHIES = [
+  ['blast1', '💥', 'First blast'], ['double', '✌️', 'Two lines at once'], ['triple', '🔥', 'Three lines at once'],
+  ['combo4', '⚡', 'Combo ×4'], ['allclear', '✨', 'All clear'], ['s500', '🥉', '500 points'], ['s1000', '🥈', '1,000 points'],
+  ['s3000', '🥇', '3,000 points'], ['s10000', '👑', '10,000 points'], ['best', '📈', 'Beat your best'], ['games10', '🎮', '10 games'],
+].map(([id, e, name]) => ({ id, e, name }));
+function award(id) {
+  P.trophies = P.trophies || [];
+  if (P.trophies.includes(id)) return;
+  P.trophies.push(id); save();
+  const t = TROPHIES.find(x => x.id === id);
+  setTimeout(() => { floatText(`🏆 ${t.e} ${t.name}!`, innerWidth / 2, $('#board').getBoundingClientRect().top + 70, 'combo'); bigMoment('TROPHY!', 'a-trophy', 110); }, 1500);
+  checkUnlocks();
+}
+function shelfHTML() {
+  const got = P.trophies || [];
+  const by = unlockBy(), n = progressNow();
+  const looks = looksFor().map(l => {
+    const open = isOpen(l), on = currentLook().id === l.id, need = lookNeed(l);
+    const left = need - n;
+    const sw = l.colours.slice(0, 5).map(c => `<i style="background:${c}"></i>`).join('');
+    return `<button class="look ${on ? 'on' : ''} ${open ? '' : 'shut'}" data-look="${l.id}"><span class="sw">${sw}</span><b>${l.name}</b><small>${on ? 'Using now' : open ? 'Tap to use' : by === 'clocks' ? `🕰️ Read ${left} more clock${left > 1 ? 's' : ''} in Tick-Tock` : `🏆 ${left} more troph${left > 1 ? 'ies' : 'y'}`}</small></button>`;
+  }).join('');
+  return `<h2>🏆 ${esc(P.name)}'s trophies</h2>
+    <div class="shelf">${TROPHIES.map(t => `<div class="tro ${got.includes(t.id) ? 'got' : ''}"><span>${got.includes(t.id) ? t.e : '❔'}</span><small>${t.name}</small></div>`).join('')}</div>
+    <p><b>${got.length}</b> of ${TROPHIES.length} collected</p>
+    <h2 style="margin-top:14px">🎨 Block looks</h2>
+    ${by === 'clocks' ? `<p>Every clock you read in Tick-Tock helps unlock new blocks! You have read <b>${n}</b>.</p>` : ''}
+    <div class="looks">${looks}</div>
+    <div><button class="btn" id="shelfClose">Back to the game</button></div>`;
+}
+function showShelf() {
+  $('#shelfCard').innerHTML = shelfHTML(); $('#shelf').classList.add('show');
+  $('#shelfClose').onclick = () => $('#shelf').classList.remove('show');
+  $('#shelfCard').querySelectorAll('[data-look]').forEach(b => b.onclick = () => {
+    const l = looksFor().find(x => x.id === b.dataset.look); if (!l || !isOpen(l)) return;
+    P.look = { ...(P.look || {}), [P.theme]: l.id }; save(); renderBoard(); renderTray(); showShelf();
+  });
+}
 // every shape Block-style games use, as [row, col] cells
 const SHAPES = [
   [[0,0]], [[0,0],[0,1]], [[0,0],[1,0]], [[0,0],[0,1],[0,2]], [[0,0],[1,0],[2,0]], [[0,0],[0,1],[0,2],[0,3]], [[0,0],[1,0],[2,0],[3,0]],
@@ -203,7 +305,7 @@ const clip = k => { if (!BUF.has(k)) BUF.set(k, fetch(`sounds/${k}.mp3`).then(r 
 async function play(keys, vol = 0.9) {
   if (!S.sound || !AC) return;
   await CLIPS_READY;
-  keys = [].concat(keys).map(k => k.startsWith('v-') ? TH().v + k.slice(2) : TH().fx + k).filter(k => CLIPS.has(k));
+  keys = [].concat(keys).map(k => k.startsWith('w-') || k.startsWith('a-') ? k : k.startsWith('v-') ? TH().v + k.slice(2) : TH().fx + k).filter(k => CLIPS.has(k));
   let t = AC.currentTime + 0.02;
   for (const k of keys) { const b = await clip(k); if (!b) continue; const s = AC.createBufferSource(), g = AC.createGain(); g.gain.value = vol; s.buffer = b; s.connect(g).connect(AC.destination); s.start(t); t += b.duration + 0.05; }
 }
@@ -377,6 +479,7 @@ function place(i, p, r0, c0) {
   if (lines) {
     if (!P.blasted) { P.blasted = true; showTip(); }
     S.combo++;
+    award('blast1'); if (lines >= 2) award('double'); if (lines >= 3) award('triple'); if (S.combo >= 4) award('combo4');
     const pts = 80 * lines * lines * Math.max(1, S.combo);
     gained += pts;
     const gone = new Set();
@@ -391,14 +494,21 @@ function place(i, p, r0, c0) {
     gone.forEach(id => { board[Math.floor(id / N)][id % N] = null; });
     const mid = cells[rows.length ? rows[0] : 3][cols.length ? cols[0] : 3].getBoundingClientRect();
     floatText(`+${pts}`, mid.left + mid.width / 2, mid.top, '');
-    if (S.combo >= 2) floatText(S.combo >= 4 ? `Super combo ×${S.combo}!` : `Combo ×${S.combo}!`, innerWidth / 2, $('#board').getBoundingClientRect().top + 30, 'combo');
-    const cheer = lines >= 3 ? 'v-amazing' : S.combo >= 4 ? 'v-supercombo' : S.combo >= 2 ? 'v-combo' : lines === 2 ? 'v-double' : null;
+    const cheer = null;
+    if (S.combo >= 5) bigMoment(`ULTRA COMBO ×${S.combo}!`, 'a-ultra', 140);
+    else if (lines >= 4) bigMoment('MEGA BLAST!', 'a-mega', 150);
+    else if (lines === 3) bigMoment('TRIPLE BLAST!', 'a-triple', 120);
+    else if (S.combo >= 3) bigMoment(`SUPER COMBO ×${S.combo}!`, 'a-supercombo', 110);
+    else if (lines === 2) bigMoment('DOUBLE BLAST!', 'a-double', 95);
+    else if (S.combo === 2) bigMoment('COMBO!', 'a-combo', 80);
+    else bigMoment('BLAST!', 'a-blast', 60);
     play(['clear' + Math.min(lines, 3)], 0.8);
     if (P.theme === 'gothic') for (let b = 0; b < lines; b++) setTimeout(bat, b * 160);
     if (cheer) setTimeout(() => play(cheer, 1), 350);
+    else if (Math.random() < 0.25) setTimeout(() => play(`w-nice-${Math.floor(Math.random() * 6)}`, 0.9), 450);
     // a completely empty board is worth a big bonus
     setTimeout(() => {
-      if (board.every(row => row.every(x => x == null))) { addScore(300); floatText('All clear! +300', innerWidth / 2, innerHeight / 2, 'combo'); play(['fanfare', 'v-allclear'], 1); }
+      if (board.every(row => row.every(x => x == null))) { addScore(300); floatText('All clear! +300', innerWidth / 2, innerHeight / 2, 'combo'); setTimeout(() => bigMoment('PERFECT!', 'a-perfect', 180), 500); award('allclear'); }
     }, 420);
   } else S.combo = 0;
   addScore(gained);
@@ -408,22 +518,33 @@ function place(i, p, r0, c0) {
   S.board = board; S.tray = tray; save();
   setTimeout(checkOver, lines ? 500 : 150);
 }
-let bestBeaten = false;
+let bestBeaten = false, startBest = 0;
 function addScore(n) {
   S.score += n;
   const el = $('#score'); el.textContent = S.score; el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 150);
-  if (S.score > S.best && S.best > 0 && !bestBeaten) { bestBeaten = true; floatText('New best score! 👑', innerWidth / 2, $('#score').getBoundingClientRect().bottom, 'combo'); play(['fanfare', 'v-newbest'], 1); }
+  if (S.score > startBest && startBest > 0 && !bestBeaten) { bestBeaten = true; setTimeout(() => bigMoment('NEW RECORD!', 'a-record', 160), 600); }
   if (S.score > S.best) { S.best = S.score; }
+  if (bestBeaten) award('best');
+  // score waypoints: 100, then every thousand (10,000 is legendary)
+  const before = S.score - n;
+  if (before < 100 && S.score >= 100) setTimeout(() => bigMoment('100!', 'a-hundred', 90), 900);
+  const kb = Math.floor(before / 1000), ka = Math.floor(S.score / 1000);
+  if (ka > kb) {
+    const k = ka * 1000;
+    setTimeout(() => bigMoment(k.toLocaleString('en-GB') + '!', k === 10000 ? 'a-legend' : k === 1000 ? 'a-thousand' : 'a-unstoppable', k % 10000 === 0 ? 220 : 130), 900);
+  }
+  for (const [k, v] of [['s500', 500], ['s1000', 1000], ['s3000', 3000], ['s10000', 10000]]) if (S.score >= v) award(k);
   $('#best').textContent = `👑 ${S.best}`;
 }
 function checkOver() {
   if (over || tray.filter(Boolean).some(p => fitsAnywhere(SHAPES[p.s]))) return;
   over = true;
   S.games++;
+  if (S.games >= 10) award('games10');
   S.hist = [...(S.hist || []), { s: S.score, t: Date.now() }].slice(-40);
   const final = S.score, wasBest = bestBeaten || (S.games === 1 && final > 0);
   S.board = null; S.tray = null; save(); cloudSave();
-  play(['gameover', wasBest ? 'v-greatbest' : 'v-greatgame'], 0.9);
+  play(['gameover', wasBest ? 'v-greatbest' : 'v-greatgame', `w-end-${Math.floor(Math.random() * 8)}`], 0.9);
   const recent = S.hist.slice(-10), max = Math.max(...recent.map(x => x.s), 1);
   $('#overCard').innerHTML = `<h2>${wasBest ? 'A new best! 👑' : 'Great game! 🌟'}</h2>
     <div class="big">${final}</div>
@@ -435,7 +556,7 @@ function checkOver() {
 }
 function newGame() {
   board = Array.from({ length: N }, () => Array(N).fill(null));
-  S.score = 0; S.combo = 0; over = false; bestBeaten = false;
+  S.score = 0; S.combo = 0; over = false; bestBeaten = false; startBest = S.best;
   tray = newTray(); S.board = board; S.tray = tray;
   $('#score').textContent = 0;
   document.querySelectorAll('.gem').forEach(g => g.closest('#board') && g.remove());
@@ -458,6 +579,32 @@ function bat() {
   e.style.left = x + 'px'; e.style.top = y + 'px'; document.body.appendChild(e);
   const dx = (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 200);
   e.animate([{ transform: 'translate(0,0) scale(.5)', opacity: 0 }, { transform: `translate(${dx * 0.3}px, -40px) scale(1)`, opacity: 1, offset: 0.25 }, { transform: `translate(${dx}px, -260px) scale(.7)`, opacity: 0 }], { duration: 1400, easing: 'ease-in' }).onfinish = () => e.remove();
+}
+// big moments: giant words, the announcer, a shake and confetti
+let slamAt = 0;
+function bigMoment(text, clip, confettiN = 70) {
+  const now = Date.now(); if (now - slamAt < 450) return; slamAt = now;
+  document.querySelectorAll('.slam').forEach(e => e.remove());
+  const e = document.createElement('div'); e.className = 'slam'; e.textContent = text; document.body.appendChild(e);
+  setTimeout(() => e.remove(), 1300);
+  const b = $('#board'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+  if (clip) play(clip, 1);
+  confetti(confettiN);
+}
+function confetti(n) {
+  const cols = P.theme === 'gothic' ? ['#9b1030', '#c9bfae', '#5b2a9e', '#1f1f28', '#b8862b'] : ['#ff5d8f', '#ffe14d', '#5fe08a', '#3fc6ff', '#d56bff', '#ffb13b', '#ffffff'];
+  const w = innerWidth, h = innerHeight;
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('div'); c.className = 'conf'; c.style.background = cols[i % cols.length];
+    if (P.theme === 'gothic' && i % 5 === 0) { c.textContent = i % 10 ? '🦇' : '🖤'; c.style.background = 'none'; c.style.fontSize = '18px'; }
+    document.body.appendChild(c);
+    const x0 = w / 2 + (Math.random() - 0.5) * 120, y0 = h * 0.45, x1 = Math.random() * w, y1 = h + 40, up = -(120 + Math.random() * 260);
+    c.animate([
+      { transform: `translate(${x0}px, ${y0}px) rotate(0deg)`, opacity: 1 },
+      { transform: `translate(${(x0 + x1) / 2}px, ${y0 + up}px) rotate(${Math.random() * 360}deg)`, opacity: 1, offset: 0.3 },
+      { transform: `translate(${x1}px, ${y1}px) rotate(${Math.random() * 900}deg)`, opacity: 0.9 },
+    ], { duration: 1300 + Math.random() * 900, easing: 'cubic-bezier(.2,.6,.4,1)' }).onfinish = () => c.remove();
+  }
 }
 function showTip() { $('#tip').style.display = P.blasted ? 'none' : ''; }
 function floatText(txt, x, y, cls) {
@@ -497,8 +644,8 @@ function switchTo(p) {
   audio(); stopMusic();
   P = p; ST.cur = pkey(P.name);
   board = P.board || Array.from({ length: N }, () => Array(N).fill(null)); tray = P.tray || newTray(); P.board = board; P.tray = tray;
-  over = false; bestBeaten = false;
-  applyTheme(); save(); cloudSave(); showTip();
+  over = false; bestBeaten = false; startBest = P.score ? 0 : P.best;
+  applyTheme(); save(); cloudSave(); showTip(); ttbClocks = null; fetchClocks();
   $('#hello').classList.remove('show');
   document.querySelectorAll('#board .gem').forEach(g => g.remove());
   renderBoard(); renderTray(); $('#score').textContent = P.score; $('#best').textContent = `👑 ${P.best}`;
@@ -514,6 +661,7 @@ $('#goBtn').onclick = () => {
   switchTo(ST.players[k] || (ST.players[k] = blank(name, pickTheme)));
 };
 $('#whoBtn').onclick = showPlayers;
+$('#shelfBtn').onclick = () => { audio(); showShelf(); };
 $('#themeBtn').onclick = () => { audio(); P.theme = P.theme === 'gothic' ? 'sparkle' : 'gothic'; stopMusic(); applyTheme(); renderBoard(); renderTray(); save(); startMusic(); play('v-hello', 0.9); };
 $('#musicBtn').onclick = () => { audio(); ST.music = !ST.music; $('#musicBtn').style.opacity = ST.music ? 1 : 0.4; save(); if (ST.music) startMusic(); else stopMusic(); };
 function applyTheme() {
@@ -532,6 +680,7 @@ if (!tray) tray = newTray();
 applyTheme(); $('#musicBtn').style.opacity = ST.music ? 1 : 0.4;
 $('#score').textContent = S.score || 0; $('#best').textContent = `👑 ${S.best || 0}`; $('#soundBtn').textContent = ST.sound ? '🔊' : '🔈';
 renderBoard(); renderTray(); showTip();
+if (P.name) fetchClocks();
 if (!P.name) showPlayers();
 else {
   $('#tapTitle').textContent = P.theme === 'gothic' ? `🦇 ${P.name}` : `✨ ${P.name}`;
@@ -540,7 +689,7 @@ else {
 }
 let tapped = false;
 function tapGo(e) {
-  if (tapped) return; tapped = true; dbg('tapGo');
+  if (tapped) return; tapped = true; dbg('tapGo'); startBest = P.score ? 0 : P.best;
   audio(); $('#tapStart').classList.remove('show');
   startMusic(); renderTray(true);
   const k = pkey(P.name);
