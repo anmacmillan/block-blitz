@@ -303,7 +303,7 @@ const WEIGHT = SHAPES.map(s => s.length <= 2 ? 4 : s.length <= 4 ? 5 : s.length 
 const KEY = 'bb:v1';
 let ST = { players: {}, cur: null, sound: true, music: false };
 try { const v = JSON.parse(localStorage.getItem(KEY)); if (v) ST = { ...ST, ...v }; } catch (e) {}
-ST.track = ST.track || 'off';     // music starts off; 🎵 turns it on
+if (!ST.trackChosen) ST.track = 'bach';     // Bach by default; 🎵 changes it (and the choice is remembered)
 const pkey = n => n.toLowerCase().replace(/[^a-z]/g, '') || 'player';
 const blank = (name, theme) => ({ name, theme, best: 0, games: 0, board: null, tray: null, score: 0, combo: 0, hist: [] });
 let P = ST.players[ST.cur] || blank('', 'sparkle');
@@ -348,20 +348,27 @@ async function play(keys, vol = 0.9) {
 }
 
 // music streams through the iPad's own audio player (light on memory); 🎵 cycles through the tracks
-const TRACKS = [['off', '🔇', 'Music off'], ['bach', '🎹', 'Bach: Goldberg Aria (Kimiko Ishizaka, public domain)'], ['cello', '🎻', 'Baroque cello'], ['theme', '🎵', 'Theme music']];
+const TRACKS = [['off', '🔇', 'Music off'], ['bach', '🎹', 'Bach: Goldberg Variations (Kimiko Ishizaka, public domain)'], ['cello', '🎻', 'Baroque cello'], ['theme', '🎵', 'Theme music']];
+const BACH = ['bach-1-aria', 'bach-2-var1', 'bach-3-var13', 'bach-4-aria-da-capo'];   // played in turn, round and round
+let bachAt = 0;
 const NOMUSIC = /[?&]nomusic=1/.test(location.search);
 let musicEl = null;
 function musicFile() {
   const t = ST.track || 'off';
-  return t === 'bach' ? 'sounds/bach-aria.mp3' : t === 'cello' ? 'sounds/cello.mp3' : t === 'theme' ? `sounds/${TH().music}.mp3` : null;
+  return t === 'bach' ? `sounds/${BACH[bachAt % BACH.length]}.mp3` : t === 'cello' ? 'sounds/cello.mp3' : t === 'theme' ? `sounds/${TH().music}.mp3` : null;
 }
 function startMusic() {
   const src = musicFile();
   if (!src || NOMUSIC) { stopMusic(); return; }
   if (musicEl && musicEl.dataset.src === src) { if (musicEl.paused) musicEl.play().catch(() => {}); return; }
   stopMusic();
-  const el = new Audio(src); el.dataset.src = src; el.loop = true; el.preload = 'auto'; el.volume = 0.35;
-  try { if (AC && AC.createMediaElementSource) { const g = AC.createGain(); g.gain.value = 0.35; AC.createMediaElementSource(el).connect(g).connect(AC.destination); } } catch (e) {}
+  const el = new Audio(src); el.dataset.src = src; el.preload = 'auto';
+  el.loop = ST.track !== 'bach';                 // Bach moves on to the next movement instead
+  if (ST.track === 'bach') el.addEventListener('ended', () => { bachAt++; musicEl = null; startMusic(); });
+  // through Web Audio so the volume sits under the sound effects (iPads ignore an audio element's own volume)
+  let routed = false;
+  try { if (AC && AC.createMediaElementSource) { const g = AC.createGain(); g.gain.value = 0.4; AC.createMediaElementSource(el).connect(g).connect(AC.destination); routed = true; } } catch (e) {}
+  el.volume = routed ? 1 : 0.4;
   musicEl = el; el.play().catch(() => {}); dbg('music', ST.track);
 }
 function stopMusic() { if (musicEl) { try { musicEl.pause(); } catch (e) {} musicEl = null; } }
@@ -847,7 +854,7 @@ $('#themeBtn').onclick = () => { audio(); P.theme = P.theme === 'gothic' ? 'spar
 $('#musicBtn').onclick = () => {
   audio();
   const i = TRACKS.findIndex(x => x[0] === (ST.track || 'off'));
-  ST.track = TRACKS[(i + 1) % TRACKS.length][0]; save(); musicIcon(); startMusic();
+  ST.track = TRACKS[(i + 1) % TRACKS.length][0]; ST.trackChosen = true; save(); musicIcon(); startMusic();
   floatText(TRACKS.find(x => x[0] === ST.track)[2], innerWidth / 2, 110, '');
 };
 function applyTheme() {
