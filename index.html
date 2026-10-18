@@ -144,11 +144,11 @@
 </div></div>
 
 <div id="dbg" style="position:fixed;left:8px;right:8px;top:2px;z-index:99;font:12px/1.3 ui-monospace,monospace;color:#9f9;pointer-events:none;white-space:normal"></div>
-<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v11</div>
+<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v13</div>
 <div id="err" style="position:fixed;left:8px;right:8px;bottom:8px;z-index:99;display:none;background:#b3123a;color:#fff;font:14px/1.3 system-ui;padding:8px 10px;border-radius:10px"></div>
 <script>
 // diagnostics: add ?debug=1 to the address to see what the iPad reports
-const BUILD = 'v11';
+const BUILD = 'v13';
 const DEBUG = /[?&]debug=1/.test(location.search);
 const dbgCounts = {};
 let dbgLast = '';
@@ -270,13 +270,13 @@ const SHAPES = [
   [[0,0],[1,0],[2,0],[2,1],[2,2]], [[0,0],[0,1],[0,2],[1,0],[2,0]], [[0,2],[1,2],[2,2],[2,1],[2,0]], [[0,0],[0,1],[0,2],[1,2],[2,2]],
 ];
 // the small, friendly shapes come up a bit more often
-const WEIGHT = SHAPES.map(s => s.length <= 2 ? 3 : s.length <= 4 ? 4 : s.length === 9 ? 1 : 2);
+const WEIGHT = SHAPES.map(s => s.length <= 2 ? 4 : s.length <= 4 ? 5 : s.length === 9 ? 0.6 : 1.4);
 
 // ---------- saved state (on the iPad, and a copy in the cloud) ----------
 const KEY = 'bb:v1';
 let ST = { players: {}, cur: null, sound: true, music: false };
 try { const v = JSON.parse(localStorage.getItem(KEY)); if (v) ST = { ...ST, ...v }; } catch (e) {}
-if (!ST.musicAsked) { ST.music = false; ST.musicAsked = true; }    // music now starts off: it only plays if someone turns it on
+ST.track = ST.track || 'off';     // music starts off; 🎵 turns it on
 const pkey = n => n.toLowerCase().replace(/[^a-z]/g, '') || 'player';
 const blank = (name, theme) => ({ name, theme, best: 0, games: 0, board: null, tray: null, score: 0, combo: 0, hist: [] });
 let P = ST.players[ST.cur] || blank('', 'sparkle');
@@ -310,18 +310,25 @@ async function play(keys, vol = 0.9) {
   for (const k of keys) { const b = await clip(k); if (!b) continue; const s = AC.createBufferSource(), g = AC.createGain(); g.gain.value = vol; s.buffer = b; s.connect(g).connect(AC.destination); s.start(t); t += b.duration + 0.05; }
 }
 
-let musicSrc = null, musicLoading = false;
+// music streams through the iPad's own audio player (light on memory); 🎵 cycles through the tracks
+const TRACKS = [['off', '🔇', 'Music off'], ['bach', '🎹', 'Bach: Goldberg Aria (Kimiko Ishizaka, public domain)'], ['cello', '🎻', 'Baroque cello'], ['theme', '🎵', 'Theme music']];
 const NOMUSIC = /[?&]nomusic=1/.test(location.search);
-async function startMusic() {
-  if (!AC || !ST.music || musicSrc || NOMUSIC || musicLoading) return;
-  musicLoading = true; dbg('music-load');
-  await CLIPS_READY;
-  const k = TH().music; if (!CLIPS.has(k)) return;
-  const b = await clip(k); dbg('music-decoded', b ? 'ok' : 'failed'); if (!b || musicSrc) return;
-  const s = AC.createBufferSource(), g = AC.createGain(); g.gain.value = 0.22; s.buffer = b; s.loop = true; s.connect(g).connect(AC.destination); s.start();
-  musicSrc = s;
+let musicEl = null;
+function musicFile() {
+  const t = ST.track || 'off';
+  return t === 'bach' ? 'sounds/bach-aria.mp3' : t === 'cello' ? 'sounds/cello.mp3' : t === 'theme' ? `sounds/${TH().music}.mp3` : null;
 }
-function stopMusic() { if (musicSrc) { try { musicSrc.stop(); } catch (e) {} musicSrc = null; } }
+function startMusic() {
+  const src = musicFile();
+  if (!src || NOMUSIC) { stopMusic(); return; }
+  if (musicEl && musicEl.dataset.src === src) { if (musicEl.paused) musicEl.play().catch(() => {}); return; }
+  stopMusic();
+  const el = new Audio(src); el.dataset.src = src; el.loop = true; el.preload = 'auto'; el.volume = 0.35;
+  try { if (AC && AC.createMediaElementSource) { const g = AC.createGain(); g.gain.value = 0.35; AC.createMediaElementSource(el).connect(g).connect(AC.destination); } } catch (e) {}
+  musicEl = el; el.play().catch(() => {}); dbg('music', ST.track);
+}
+function stopMusic() { if (musicEl) { try { musicEl.pause(); } catch (e) {} musicEl = null; } }
+function musicIcon() { const t = TRACKS.find(x => x[0] === (ST.track || 'off')) || TRACKS[0]; $('#musicBtn').textContent = t[1]; $('#musicBtn').title = t[2]; }
 
 // ---------- the board ----------
 let board = P.board || Array.from({ length: N }, () => Array(N).fill(null));
@@ -362,17 +369,41 @@ function linesIf(shape, r0, c0) {
 
 // ---------- the three pieces ----------
 function randomShape() {
-  const tot = WEIGHT.reduce((a, b) => a + b, 0); let x = Math.random() * tot;
-  for (let i = 0; i < SHAPES.length; i++) { x -= WEIGHT[i]; if (x <= 0) return i; }
+  const full = board.flat().filter(x => x != null).length / 64;
+  const W = WEIGHT.map((w, i) => SHAPES[i].length >= 5 ? w * Math.max(0.15, 1 - full * 1.4) : w);
+  const tot = W.reduce((a, b) => a + b, 0); let x = Math.random() * tot;
+  for (let i = 0; i < SHAPES.length; i++) { x -= W[i]; if (x <= 0) return i; }
   return 0;
 }
-function newTray() {
-  // a fair deal: at least one of the three always fits
-  for (let tries = 0; tries < 40; tries++) {
-    const t = [0, 1, 2].map(() => ({ s: randomShape(), c: Math.floor(Math.random() * 8) }));
-    if (t.some(p => fitsAnywhere(SHAPES[p.s]))) return t;
+// a fair deal, like Block Blast: all three pieces can always be placed, in some order (rows and columns clearing as you go)
+function canPlaceAll(grid, shapes) {
+  if (!shapes.length) return true;
+  for (let k = 0; k < shapes.length; k++) {
+    const sh = SHAPES[shapes[k]], rest = shapes.filter((_, j) => j !== k);
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      if (!sh.every(([a, b]) => r + a < N && c + b < N && !grid[r + a][c + b])) continue;
+      const g = grid.map(row => row.slice());
+      sh.forEach(([a, b]) => { g[r + a][c + b] = 1; });
+      const fullR = [], fullC = [];
+      for (let i = 0; i < N; i++) { if (g[i].every(Boolean)) fullR.push(i); if (g.every(row => row[i])) fullC.push(i); }
+      fullR.forEach(i => g[i].fill(0)); fullC.forEach(i => g.forEach(row => { row[i] = 0; }));
+      if (canPlaceAll(g, rest)) return true;
+    }
   }
-  return [{ s: 0, c: 0 }, { s: 0, c: 1 }, { s: 1, c: 2 }];
+  return false;
+}
+function newTray() {
+  const grid = board.map(row => row.map(x => (x == null ? 0 : 1)));
+  for (let tries = 0; tries < 60; tries++) {
+    const t = [0, 1, 2].map(() => ({ s: randomShape(), c: Math.floor(Math.random() * 8) }));
+    if (canPlaceAll(grid, t.map(p => p.s))) return t;
+  }
+  // a very full board: offer small pieces, so there is still a chance
+  for (let tries = 0; tries < 60; tries++) {
+    const t = [0, 1, 2].map(() => ({ s: [0, 1, 2, 3, 4, 13, 14, 15, 16][Math.floor(Math.random() * 9)], c: Math.floor(Math.random() * 8) }));
+    if (canPlaceAll(grid, t.map(p => p.s))) return t;
+  }
+  return [0, 1, 2].map(i => ({ s: 0, c: i }));
 }
 function pieceGrid(p, cls) {
   const sh = SHAPES[p.s], H = Math.max(...sh.map(x => x[0])) + 1, W = Math.max(...sh.map(x => x[1])) + 1;
@@ -606,6 +637,21 @@ function confetti(n) {
     ], { duration: 1300 + Math.random() * 900, easing: 'cubic-bezier(.2,.6,.4,1)' }).onfinish = () => c.remove();
   }
 }
+// your own best and trophies follow you to any iPad (and nobody else's are shown)
+async function restoreMine() {
+  const me = P;
+  try {
+    const r = await fetch(CLOUD + cloudId() + '.json', { cache: 'no-store' }); const d = r.ok ? await r.json() : null;
+    if (d && me === P) {
+      if ((d.best || 0) > (P.best || 0)) { P.best = d.best; $('#best').textContent = `👑 ${P.best}`; }
+      P.games = Math.max(P.games || 0, d.games || 0);
+      P.trophies = [...new Set([...(P.trophies || []), ...(Array.isArray(d.trophies) ? d.trophies : [])])];
+      if (!P.look && d.look) P.look = d.look;
+      save();
+    }
+  } catch (e) {}
+  cloudSave();
+}
 function showTip() { $('#tip').style.display = P.blasted ? 'none' : ''; }
 function floatText(txt, x, y, cls) {
   const f = document.createElement('div'); f.className = 'float ' + cls; f.textContent = txt;
@@ -626,18 +672,12 @@ let pickTheme = 'sparkle';
 document.querySelectorAll('.theme').forEach(b => b.onclick = () => { pickTheme = b.dataset.t; document.querySelectorAll('.theme').forEach(x => x.classList.toggle('on', x === b)); });
 // the family: always offered, with their usual look; anyone else can add themselves
 const FAMILY = [['Manon', 'gothic'], ['Margot', 'sparkle'], ['Dad', 'sparkle']];
-const cloudBest = {};
 function showPlayers() {
   const people = [...FAMILY.map(([n, t]) => ST.players[pkey(n)] || blank(n, t)), ...Object.values(ST.players).filter(p => !FAMILY.some(([n]) => pkey(n) === pkey(p.name)))];
-  const best = p => Math.max(p.best || 0, cloudBest[pkey(p.name)] || 0);
-  $('#playerList').innerHTML = people.map(p => `<button class="btn ${p.theme === 'gothic' ? 'ghost' : ''}" data-p="${pkey(p.name)}" data-n="${esc(p.name)}" data-t="${p.theme}">${p.theme === 'gothic' ? '🦇' : '✨'} ${esc(p.name)} <small>👑 ${best(p)}</small></button>`).join('');
+  $('#playerList').innerHTML = people.map(p => `<button class="btn ${p.theme === 'gothic' ? 'ghost' : ''}" data-p="${pkey(p.name)}" data-n="${esc(p.name)}" data-t="${p.theme}">${p.theme === 'gothic' ? '🦇' : '✨'} ${esc(p.name)}</button>`).join('');
   $('#newHead').style.display = '';
   $('#nameIn').value = '';
   $('#hello').classList.add('show');
-  // everyone's best score, from whichever iPad they played on
-  for (const p of people) fetch(CLOUD + ('BB' + pkey(p.name)).slice(0, 12) + '.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
-    if (d && d.best > (cloudBest[pkey(p.name)] || 0)) { cloudBest[pkey(p.name)] = d.best; const b = document.querySelector(`[data-p="${pkey(p.name)}"] small`); if (b) b.textContent = `👑 ${best(p)}`; }
-  }).catch(() => {});
 }
 $('#playerList').onclick = e => { const b = e.target.closest('[data-p]'); if (b) switchTo(ST.players[b.dataset.p] || (ST.players[b.dataset.p] = blank(b.dataset.n, b.dataset.t))); };
 function switchTo(p) {
@@ -645,7 +685,7 @@ function switchTo(p) {
   P = p; ST.cur = pkey(P.name);
   board = P.board || Array.from({ length: N }, () => Array(N).fill(null)); tray = P.tray || newTray(); P.board = board; P.tray = tray;
   over = false; bestBeaten = false; startBest = P.score ? 0 : P.best;
-  applyTheme(); save(); cloudSave(); showTip(); ttbClocks = null; fetchClocks();
+  applyTheme(); save(); showTip(); ttbClocks = null; fetchClocks(); restoreMine();
   $('#hello').classList.remove('show');
   document.querySelectorAll('#board .gem').forEach(g => g.remove());
   renderBoard(); renderTray(); $('#score').textContent = P.score; $('#best').textContent = `👑 ${P.best}`;
@@ -663,21 +703,26 @@ $('#goBtn').onclick = () => {
 $('#whoBtn').onclick = showPlayers;
 $('#shelfBtn').onclick = () => { audio(); showShelf(); };
 $('#themeBtn').onclick = () => { audio(); P.theme = P.theme === 'gothic' ? 'sparkle' : 'gothic'; stopMusic(); applyTheme(); renderBoard(); renderTray(); save(); startMusic(); play('v-hello', 0.9); };
-$('#musicBtn').onclick = () => { audio(); ST.music = !ST.music; $('#musicBtn').style.opacity = ST.music ? 1 : 0.4; save(); if (ST.music) startMusic(); else stopMusic(); };
+$('#musicBtn').onclick = () => {
+  audio();
+  const i = TRACKS.findIndex(x => x[0] === (ST.track || 'off'));
+  ST.track = TRACKS[(i + 1) % TRACKS.length][0]; save(); musicIcon(); startMusic();
+  floatText(TRACKS.find(x => x[0] === ST.track)[2], innerWidth / 2, 110, '');
+};
 function applyTheme() {
   document.body.classList.toggle('gothic', P.theme === 'gothic');
   $('#title').textContent = TH().title;
   $('#whoBtn').textContent = `${P.theme === 'gothic' ? '🦇' : '✨'} ${P.name || 'Who?'}`;
   document.querySelector('meta[name=theme-color]').content = P.theme === 'gothic' ? '#050407' : '#1b1446';
 }
-document.addEventListener('pointerdown', () => { audio(); startMusic(); }, true);
-document.addEventListener('touchend', () => { audio(); startMusic(); }, true);   // older iPads only allow sound to start on touchend
+document.addEventListener('pointerdown', () => { audio(); if (!musicEl) startMusic(); }, true);
+document.addEventListener('touchend', () => { audio(); if (!musicEl) startMusic(); }, true);   // older iPads only allow sound to start on touchend
 
 // ---------- start ----------
 addEventListener('resize', sizeBoard);
 sizeBoard(); buildBoard();
 if (!tray) tray = newTray();
-applyTheme(); $('#musicBtn').style.opacity = ST.music ? 1 : 0.4;
+applyTheme(); musicIcon();
 $('#score').textContent = S.score || 0; $('#best').textContent = `👑 ${S.best || 0}`; $('#soundBtn').textContent = ST.sound ? '🔊' : '🔈';
 renderBoard(); renderTray(); showTip();
 if (P.name) fetchClocks();

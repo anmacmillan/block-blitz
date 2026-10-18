@@ -159,5 +159,9 @@ if __name__ == '__main__':
         if f.exists(): continue
         f.write_bytes(post(f'/text-to-speech/{ANN}?output_format=mp3_44100_128', {'text': text, 'model_id': 'eleven_multilingual_v2',
                            'voice_settings': {'stability': 0.3, 'similarity_boost': 0.85, 'style': 0.8, 'use_speaker_boost': True}})); print('line', name)
+    f = OUT / 'cello.mp3'
+    if not f.exists():
+        f.write_bytes(post('/music', {'prompt': ("A calm, cerebral solo cello piece in the baroque style of a cello suite prelude: flowing arpeggios, "
+            "warm and resonant, contemplative and gentle, steady tempo, seamless loop, no other instruments, no vocals"), 'music_length_ms': 90000})); print('cello')
     (OUT / 'manifest.json').write_text(json.dumps(sorted(p.stem for p in OUT.glob('*.mp3') if p.stat().st_size > 1000)))
     print('done:', len(list(OUT.glob('*.mp3'))), 'files')
