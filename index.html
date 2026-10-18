@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Block Blitz">
+<meta name="theme-color" content="#1b1446">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Block Blitz</title>
+<style>
+  :root { --cell: 40px; --bg0: #3a2b8f; --bg1: #241a5c; --bg2: #120c33; --ink: #fff7ff; --gold: #ffd25a; --board: #17104a; --rim: #3b2f8f; --sq: #241b63; --sqline: #2e2475; --card1: #3a2b8f; --card2: #241a5c; --cardrim: #5a4bc0; --font: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif; }
+  body.gothic { --bg0: #2a1420; --bg1: #140b12; --bg2: #050407; --ink: #efe6dc; --gold: #d8c08a; --board: #0d0a10; --rim: #3a2230; --sq: #17121c; --sqline: #241a28; --card1: #24141e; --card2: #0f0a10; --cardrim: #6b2340; --font: "Iowan Old Style", "Palatino", Georgia, serif; }
+  body.gothic .gem { box-shadow: inset 0 calc(var(--cell) * .1) 0 rgba(255,255,255,.18), inset 0 calc(var(--cell) * -.14) 0 rgba(0,0,0,.45), 0 2px 0 rgba(0,0,0,.6); }
+  body.gothic .gem::after { background: rgba(255,255,255,.22); width: 18%; height: 12%; }
+  body.gothic #title { letter-spacing: 3px; font-variant: small-caps; }
+  .bat { position: fixed; pointer-events: none; z-index: 25; font-size: 26px; }
+  #title { font-size: 15px; opacity: .75; font-weight: 800; }
+  .who { border: 0; border-radius: 14px; padding: 8px 12px; font-size: 16px; font-weight: 800; background: rgba(255,255,255,.1); color: var(--ink); font-family: inherit; }
+  .players { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+  .players .btn { margin: 0; }
+  .themes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 4px; }
+  .theme { border: 3px solid transparent; border-radius: 18px; padding: 14px 6px; font-size: 18px; font-weight: 800; color: #fff; font-family: inherit; }
+  .theme.on { border-color: #fff; }
+  .theme[data-t=sparkle] { background: linear-gradient(135deg, #ff5d8f, #7d6bff); }
+  .theme[data-t=gothic] { background: linear-gradient(135deg, #2a0d18, #4a1f6a); font-family: Georgia, serif; font-variant: small-caps; letter-spacing: 1px; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; }
+  body { background: radial-gradient(ellipse at 50% 0%, var(--bg0) 0%, var(--bg1) 35%, var(--bg2) 100%); color: var(--ink);
+    font-family: var(--font); display: flex; flex-direction: column; align-items: center; }
+  header { width: 100%; max-width: 760px; display: flex; align-items: center; justify-content: space-between; padding: calc(env(safe-area-inset-top) + 10px) 18px 4px; }
+  .best { font-size: 20px; font-weight: 800; color: var(--gold); display: flex; align-items: center; gap: 6px; }
+  .icons { display: flex; gap: 8px; }
+  .icon { width: 44px; height: 44px; border-radius: 14px; border: 0; background: rgba(255,255,255,.1); color: #fff; font-size: 21px; }
+  #score { font-size: 58px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 4px 0 rgba(0,0,0,.25); margin: 2px 0 8px; transition: transform .15s; }
+  #score.bump { transform: scale(1.12); }
+  #board { position: relative; width: calc(var(--cell) * 8 + 16px); height: calc(var(--cell) * 8 + 16px); padding: 8px; border-radius: 18px;
+    background: var(--board); box-shadow: inset 0 0 0 3px var(--rim), 0 18px 40px rgba(0,0,0,.45); display: grid; grid-template-columns: repeat(8, var(--cell)); grid-template-rows: repeat(8, var(--cell)); }
+  .sq { width: var(--cell); height: var(--cell); border-radius: 7px; background: var(--sq); box-shadow: inset 0 0 0 1px var(--sqline); position: relative; }
+  .gem { position: absolute; inset: 2px; border-radius: 8px; background: var(--c);
+    box-shadow: inset 0 calc(var(--cell) * .12) 0 rgba(255,255,255,.35), inset 0 calc(var(--cell) * -.12) 0 rgba(0,0,0,.22), 0 2px 0 rgba(0,0,0,.25); }
+  .gem::after { content: ''; position: absolute; left: 18%; top: 14%; width: 26%; height: 18%; border-radius: 50%; background: rgba(255,255,255,.55); }
+  .sq.ghost::before { content: ''; position: absolute; inset: 2px; border-radius: 8px; background: var(--c); opacity: .45; }
+  .sq.willclear .gem { filter: brightness(1.35) saturate(1.2); }
+  .sq.willclear { box-shadow: inset 0 0 0 2px #fff6; }
+  .gem.pop { animation: pop .38s ease-in forwards; }
+  @keyframes pop { 0% { transform: scale(1); filter: brightness(2); } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(0); opacity: 0; } }
+  .gem.land { animation: land .18s ease-out; }
+  @keyframes land { 0% { transform: scale(.75); } 100% { transform: scale(1); } }
+  #tray { width: calc(var(--cell) * 8 + 16px); height: calc(var(--cell) * 3.4); display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 14px; }
+  .slot { display: flex; align-items: center; justify-content: center; }
+  .piece { display: grid; gap: 0; touch-action: none; transition: transform .15s, opacity .15s; }
+  .piece .pc { width: calc(var(--cell) * .52); height: calc(var(--cell) * .52); position: relative; }
+  .piece.nofit { opacity: .35; filter: grayscale(.5); }
+  #drag { position: fixed; left: 0; top: 0; display: grid; pointer-events: none; z-index: 20; filter: drop-shadow(0 10px 12px rgba(0,0,0,.45)); }
+  #drag .pc { width: var(--cell); height: var(--cell); position: relative; }
+  .float { position: fixed; z-index: 30; pointer-events: none; font-weight: 900; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.35); animation: rise 1.1s ease-out forwards; white-space: nowrap; }
+  .float.combo { font-size: 38px; color: var(--gold); }
+  @keyframes rise { 0% { transform: translate(-50%, 0) scale(.6); opacity: 0; } 15% { transform: translate(-50%, -10px) scale(1.15); opacity: 1; } 100% { transform: translate(-50%, -90px) scale(1); opacity: 0; } }
+  .spark { position: fixed; width: 9px; height: 9px; border-radius: 50%; pointer-events: none; z-index: 25; }
+  .overlay { position: fixed; inset: 0; background: rgba(10,6,30,.72); display: none; align-items: center; justify-content: center; z-index: 40; padding: 20px; }
+  .overlay.show { display: flex; }
+  .card { background: linear-gradient(var(--card1), var(--card2)); border-radius: 26px; padding: 26px; width: min(440px, 100%); text-align: center; box-shadow: 0 0 0 3px var(--cardrim), 0 20px 50px rgba(0,0,0,.5); }
+  .card h2 { margin: 0 0 6px; font-size: 32px; }
+  .card .big { font-size: 54px; font-weight: 900; margin: 6px 0; }
+  .card p { font-size: 18px; margin: 8px 0; opacity: .92; }
+  .btn { border: 0; border-radius: 18px; padding: 15px 28px; font-size: 22px; font-weight: 800; color: #3a1a00; background: linear-gradient(#ffe27a, #ffb83d); box-shadow: 0 5px 0 #c27a12; margin: 10px 6px 0; font-family: inherit; }
+  .btn.ghost { background: rgba(255,255,255,.12); color: #fff; box-shadow: none; }
+  input.name { font-size: 22px; padding: 10px 14px; border-radius: 14px; border: 0; width: 70%; text-align: center; font-family: inherit; margin-top: 6px; }
+  .hist { display: flex; gap: 5px; align-items: flex-end; justify-content: center; height: 80px; margin: 12px 0 2px; }
+  .hist div { width: 16px; border-radius: 5px 5px 2px 2px; background: linear-gradient(#ffd25a, #ff7ac6); min-height: 3px; }
+  small.n { opacity: .7; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="best" id="best">👑 0</div>
+  <div id="title">BLOCK BLITZ</div>
+  <div class="icons">
+    <button class="who" id="whoBtn">🙂</button>
+    <button class="icon" id="musicBtn" title="Music">🎵</button>
+    <button class="icon" id="soundBtn" title="Sound">🔊</button>
+    <button class="icon" id="newBtn" title="New game">↻</button>
+  </div>
+</header>
+<div id="score">0</div>
+<div id="board"></div>
+<div id="tray"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+<div id="drag"></div>
+
+<div class="overlay" id="hello"><div class="card">
+  <h2>Block Blitz</h2>
+  <p>Drag the blocks onto the board. Fill a whole row or column to blast it away!</p>
+  <div class="players" id="playerList"></div>
+  <p id="newHead" style="margin-top:14px"><b>New player</b></p>
+  <input class="name" id="nameIn" maxlength="14" placeholder="Your name">
+  <div class="themes"><button class="theme on" data-t="sparkle">✨ Sparkle</button><button class="theme" data-t="gothic">🦇 Nevermore</button></div>
+  <div><button class="btn" id="goBtn">Let's play!</button></div>
+</div></div>
+<div class="overlay" id="over"><div class="card" id="overCard"></div></div>
+<div class="overlay" id="confirm"><div class="card">
+  <h2>Start a new game?</h2>
+  <p>This game will end, and your score will be saved.</p>
+  <button class="btn" id="yesNew">New game</button><button class="btn ghost" id="noNew">Keep playing</button>
+</div></div>
+
+<script>
+// Block Blitz: an ad-free block puzzle for Margot and Manon. No ads, no links out, no tracking.
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const N = 8;
+const THEMES = {
+  sparkle: { colours: ['#ff5d8f', '#ffb13b', '#ffe14d', '#5fe08a', '#3fc6ff', '#7d6bff', '#d56bff', '#ff7a4d'], v: 'v-', fx: '', music: 'music', spark: null, title: '✨ BLOCK BLITZ ✨' },
+  gothic: { colours: ['#9b1030', '#5b2a9e', '#1f6b4a', '#c9bfae', '#2b2b3a', '#7a1f5c', '#b8862b', '#3d5c8a'], v: 'g-', fx: 'g-', music: 'g-music', spark: '#c9bfae', title: '🦇 BLOCK BLITZ 🦇' },
+};
+const TH = () => THEMES[P.theme] || THEMES.sparkle;
+const col = i => TH().colours[i % 8];
+// every shape Block-style games use, as [row, col] cells
+const SHAPES = [
+  [[0,0]], [[0,0],[0,1]], [[0,0],[1,0]], [[0,0],[0,1],[0,2]], [[0,0],[1,0],[2,0]], [[0,0],[0,1],[0,2],[0,3]], [[0,0],[1,0],[2,0],[3,0]],
+  [[0,0],[0,1],[0,2],[0,3],[0,4]], [[0,0],[1,0],[2,0],[3,0],[4,0]],
+  [[0,0],[0,1],[1,0],[1,1]], [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]],
+  [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]], [[0,0],[0,1],[1,0],[1,1],[2,0],[2,1]],
+  [[0,0],[1,0],[1,1]], [[0,1],[1,0],[1,1]], [[0,0],[0,1],[1,0]], [[0,0],[0,1],[1,1]],
+  [[0,0],[1,0],[2,0],[2,1]], [[0,1],[1,1],[2,1],[2,0]], [[0,0],[0,1],[1,1],[2,1]], [[0,0],[0,1],[1,0],[2,0]],
+  [[0,0],[0,1],[0,2],[1,0]], [[0,0],[0,1],[0,2],[1,2]], [[0,0],[1,0],[1,1],[1,2]], [[0,2],[1,0],[1,1],[1,2]],
+  [[0,0],[0,1],[0,2],[1,1]], [[0,1],[1,0],[1,1],[1,2]], [[0,0],[1,0],[2,0],[1,1]], [[0,1],[1,1],[2,1],[1,0]],
+  [[0,0],[0,1],[1,1],[1,2]], [[0,1],[0,2],[1,0],[1,1]], [[0,0],[1,0],[1,1],[2,1]], [[0,1],[1,1],[1,0],[2,0]],
+  [[0,0],[1,0],[2,0],[2,1],[2,2]], [[0,0],[0,1],[0,2],[1,0],[2,0]], [[0,2],[1,2],[2,2],[2,1],[2,0]], [[0,0],[0,1],[0,2],[1,2],[2,2]],
+];
+// the small, friendly shapes come up a bit more often
+const WEIGHT = SHAPES.map(s => s.length <= 2 ? 3 : s.length <= 4 ? 4 : s.length === 9 ? 1 : 2);
+
+// ---------- saved state (on the iPad, and a copy in the cloud) ----------
+const KEY = 'bb:v1';
+let ST = { players: {}, cur: null, sound: true, music: true };
+try { const v = JSON.parse(localStorage.getItem(KEY)); if (v) ST = { ...ST, ...v }; } catch (e) {}
+const pkey = n => n.toLowerCase().replace(/[^a-z]/g, '') || 'player';
+const blank = (name, theme) => ({ name, theme, best: 0, games: 0, board: null, tray: null, score: 0, combo: 0, hist: [] });
+let P = ST.players[ST.cur] || blank('', 'sparkle');
+const S = new Proxy({}, { get: (t, k) => k === 'sound' || k === 'music' ? ST[k] : P[k], set: (t, k, v) => { if (k === 'sound' || k === 'music') ST[k] = v; else P[k] = v; return true; } });
+const CLOUD = 'https://wizard-chess-manon-default-rtdb.europe-west1.firebasedatabase.app/wcp/';
+const cloudId = () => ('BB' + pkey(P.name)).slice(0, 12);
+let cloudTimer = null;
+function save() {
+  if (P.name) ST.players[pkey(P.name)] = P;
+  try { localStorage.setItem(KEY, JSON.stringify(ST)); } catch (e) {}
+  clearTimeout(cloudTimer); cloudTimer = setTimeout(cloudSave, 3000);
+}
+function cloudSave() {
+  if (!P.name) return;
+  const { board, tray, ...rest } = P;
+  try { fetch(CLOUD + cloudId() + '.json', { method: 'PUT', body: JSON.stringify({ ...rest, t: Date.now() }), keepalive: true }).catch(() => {}); } catch (e) {}
+}
+addEventListener('pagehide', () => { save(); cloudSave(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { save(); cloudSave(); } else if (AC && AC.state !== 'running') AC.resume(); });
+
+// ---------- sound: recorded clips only (sounds/manifest.json) ----------
+let AC = null, CLIPS = new Set(); const BUF = new Map();
+const CLIPS_READY = fetch('sounds/manifest.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : []).then(k => { CLIPS = new Set(k); }).catch(() => {});
+function audio() { if (!AC) try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} if (AC && AC.state !== 'running') AC.resume(); }
+const clip = k => { if (!BUF.has(k)) BUF.set(k, fetch(`sounds/${k}.mp3`).then(r => r.arrayBuffer()).then(b => new Promise((res, rej) => AC.decodeAudioData(b, res, rej))).catch(() => null)); return BUF.get(k); };
+async function play(keys, vol = 0.9) {
+  if (!S.sound || !AC) return;
+  await CLIPS_READY;
+  keys = [].concat(keys).map(k => k.startsWith('v-') ? TH().v + k.slice(2) : TH().fx + k).filter(k => CLIPS.has(k));
+  let t = AC.currentTime + 0.02;
+  for (const k of keys) { const b = await clip(k); if (!b) continue; const s = AC.createBufferSource(), g = AC.createGain(); g.gain.value = vol; s.buffer = b; s.connect(g).connect(AC.destination); s.start(t); t += b.duration + 0.05; }
+}
+
+let musicSrc = null;
+async function startMusic() {
+  if (!AC || !ST.music || musicSrc) return;
+  await CLIPS_READY;
+  const k = TH().music; if (!CLIPS.has(k)) return;
+  const b = await clip(k); if (!b || musicSrc) return;
+  const s = AC.createBufferSource(), g = AC.createGain(); g.gain.value = 0.22; s.buffer = b; s.loop = true; s.connect(g).connect(AC.destination); s.start();
+  musicSrc = s;
+}
+function stopMusic() { if (musicSrc) { try { musicSrc.stop(); } catch (e) {} musicSrc = null; } }
+
+// ---------- the board ----------
+let board = P.board || Array.from({ length: N }, () => Array(N).fill(null));
+let tray = P.tray || null;
+const cells = [];
+function sizeBoard() {
+  const w = Math.min(innerWidth - 24, 640), h = innerHeight - 250;
+  const cell = Math.floor(Math.min((w - 16) / 8, (h - 16) / (8 + 3.6)));
+  document.documentElement.style.setProperty('--cell', Math.max(28, cell) + 'px');
+}
+function buildBoard() {
+  const b = $('#board'); b.innerHTML = ''; cells.length = 0;
+  for (let r = 0; r < N; r++) { cells.push([]); for (let c = 0; c < N; c++) { const d = document.createElement('div'); d.className = 'sq'; b.appendChild(d); cells[r].push(d); } }
+}
+function renderBoard() {
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const d = cells[r][c], v = board[r][c];
+    const g = d.querySelector('.gem');
+    if (v != null && !g) { const e = document.createElement('div'); e.className = 'gem'; e.style.setProperty('--c', col(v)); d.appendChild(e); }
+    else if (v != null && g) g.style.setProperty('--c', col(v));
+    else if (v == null && g && !g.classList.contains('pop')) g.remove();
+  }
+}
+const fits = (shape, r0, c0) => shape.every(([r, c]) => r0 + r >= 0 && r0 + r < N && c0 + c >= 0 && c0 + c < N && board[r0 + r][c0 + c] == null);
+const fitsAnywhere = shape => { for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (fits(shape, r, c)) return true; return false; };
+function linesIf(shape, r0, c0) {
+  const filled = (r, c) => board[r][c] != null || shape.some(([a, b]) => r0 + a === r && c0 + b === c);
+  const rows = [], cols = [];
+  for (let r = 0; r < N; r++) if ([...Array(N).keys()].every(c => filled(r, c))) rows.push(r);
+  for (let c = 0; c < N; c++) if ([...Array(N).keys()].every(r => filled(r, c))) cols.push(c);
+  return { rows, cols };
+}
+
+// ---------- the three pieces ----------
+function randomShape() {
+  const tot = WEIGHT.reduce((a, b) => a + b, 0); let x = Math.random() * tot;
+  for (let i = 0; i < SHAPES.length; i++) { x -= WEIGHT[i]; if (x <= 0) return i; }
+  return 0;
+}
+function newTray() {
+  // a fair deal: at least one of the three always fits
+  for (let tries = 0; tries < 40; tries++) {
+    const t = [0, 1, 2].map(() => ({ s: randomShape(), c: Math.floor(Math.random() * 8) }));
+    if (t.some(p => fitsAnywhere(SHAPES[p.s]))) return t;
+  }
+  return [{ s: 0, c: 0 }, { s: 0, c: 1 }, { s: 1, c: 2 }];
+}
+function pieceGrid(p, cls) {
+  const sh = SHAPES[p.s], H = Math.max(...sh.map(x => x[0])) + 1, W = Math.max(...sh.map(x => x[1])) + 1;
+  const el = document.createElement('div'); el.className = cls;
+  el.style.gridTemplateColumns = `repeat(${W}, auto)`; el.style.gridTemplateRows = `repeat(${H}, auto)`;
+  for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) {
+    const d = document.createElement('div'); d.className = 'pc';
+    if (sh.some(([a, b]) => a === r && b === c)) { const g = document.createElement('div'); g.className = 'gem'; g.style.setProperty('--c', col(p.c)); d.appendChild(g); }
+    el.appendChild(d);
+  }
+  return el;
+}
+function renderTray() {
+  document.querySelectorAll('.slot').forEach((slot, i) => {
+    slot.innerHTML = '';
+    const p = tray[i]; if (!p) return;
+    const el = pieceGrid(p, 'piece'); el.dataset.i = i;
+    if (!fitsAnywhere(SHAPES[p.s])) el.classList.add('nofit');
+    slot.appendChild(el);
+  });
+}
+
+// ---------- dragging (lifted above the finger, like the real thing) ----------
+let drag = null;
+const LIFT = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell')) * 1.6;
+$('#tray').addEventListener('pointerdown', e => {
+  const el = e.target.closest('.piece'); if (!el || over) return;
+  audio();
+  const i = +el.dataset.i, p = tray[i];
+  const d = $('#drag'); d.innerHTML = ''; const g = pieceGrid(p, ''); d.style.gridTemplateColumns = g.style.gridTemplateColumns; d.style.gridTemplateRows = g.style.gridTemplateRows;
+  [...g.children].forEach(x => d.appendChild(x));
+  el.style.opacity = 0;
+  drag = { i, p, el, pos: null };
+  moveDrag(e); play('pick', 0.5);
+  try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
+});
+addEventListener('pointermove', e => { if (drag) moveDrag(e); });
+addEventListener('pointerup', e => { if (drag) dropDrag(e); });
+addEventListener('pointercancel', () => { if (drag) { drag.el.style.opacity = 1; $('#drag').innerHTML = ''; clearGhost(); drag = null; } });
+function moveDrag(e) {
+  const d = $('#drag'), w = d.offsetWidth, h = d.offsetHeight;
+  const x = e.clientX - w / 2, y = e.clientY - h - LIFT() * 0.55;
+  d.style.transform = `translate(${x}px, ${y}px)`;
+  const cell = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell'));
+  const br = cells[0][0].getBoundingClientRect();
+  const c0 = Math.round((x - br.left) / cell), r0 = Math.round((y - br.top) / cell);
+  const sh = SHAPES[drag.p.s];
+  clearGhost();
+  if (fits(sh, r0, c0)) {
+    drag.pos = [r0, c0];
+    sh.forEach(([a, b]) => { const q = cells[r0 + a][c0 + b]; q.classList.add('ghost'); q.style.setProperty('--c', col(drag.p.c)); });
+    const { rows, cols } = linesIf(sh, r0, c0);
+    rows.forEach(r => cells[r].forEach(q => q.classList.add('willclear')));
+    cols.forEach(c => cells.forEach(row => row[c].classList.add('willclear')));
+  } else drag.pos = null;
+}
+function clearGhost() { document.querySelectorAll('.sq.ghost, .sq.willclear').forEach(q => q.classList.remove('ghost', 'willclear')); }
+function dropDrag() {
+  const { i, p, el, pos } = drag; drag = null;
+  $('#drag').innerHTML = ''; clearGhost();
+  if (!pos) { el.style.opacity = 1; return; }
+  place(i, p, pos[0], pos[1]);
+}
+
+// ---------- placing, clearing and scoring ----------
+let over = false;
+function place(i, p, r0, c0) {
+  const sh = SHAPES[p.s];
+  sh.forEach(([a, b]) => { board[r0 + a][c0 + b] = p.c; });
+  renderBoard();
+  sh.forEach(([a, b]) => { const g = cells[r0 + a][c0 + b].querySelector('.gem'); if (g) { g.classList.remove('land'); void g.offsetWidth; g.classList.add('land'); } });
+  play('place', 0.6);
+  tray[i] = null;
+  let gained = sh.length;
+  // full rows and columns sparkle away
+  const rows = [], cols = [];
+  for (let r = 0; r < N; r++) if (board[r].every(x => x != null)) rows.push(r);
+  for (let c = 0; c < N; c++) if (board.every(row => row[c] != null)) cols.push(c);
+  const lines = rows.length + cols.length;
+  if (lines) {
+    S.combo++;
+    const pts = 80 * lines * lines * Math.max(1, S.combo);
+    gained += pts;
+    const gone = new Set();
+    rows.forEach(r => { for (let c = 0; c < N; c++) gone.add(r * N + c); });
+    cols.forEach(c => { for (let r = 0; r < N; r++) gone.add(r * N + c); });
+    let k = 0;
+    for (const id of gone) {
+      const r = Math.floor(id / N), c = id % N, g = cells[r][c].querySelector('.gem');
+      const cc = col(board[r][c] ?? 0);
+      if (g) { setTimeout(() => { g.classList.add('pop'); sparks(cells[r][c], TH().spark || cc); setTimeout(() => g.remove(), 380); }, (k++ % 8) * 25); }
+    }
+    gone.forEach(id => { board[Math.floor(id / N)][id % N] = null; });
+    const mid = cells[rows.length ? rows[0] : 3][cols.length ? cols[0] : 3].getBoundingClientRect();
+    floatText(`+${pts}`, mid.left + mid.width / 2, mid.top, '');
+    if (S.combo >= 2) floatText(S.combo >= 4 ? `Super combo ×${S.combo}!` : `Combo ×${S.combo}!`, innerWidth / 2, $('#board').getBoundingClientRect().top + 30, 'combo');
+    const cheer = lines >= 3 ? 'v-amazing' : S.combo >= 4 ? 'v-supercombo' : S.combo >= 2 ? 'v-combo' : lines === 2 ? 'v-double' : null;
+    play(['clear' + Math.min(lines, 3)], 0.8);
+    if (P.theme === 'gothic') for (let b = 0; b < lines; b++) setTimeout(bat, b * 160);
+    if (cheer) setTimeout(() => play(cheer, 1), 350);
+    // a completely empty board is worth a big bonus
+    setTimeout(() => {
+      if (board.every(row => row.every(x => x == null))) { addScore(300); floatText('All clear! +300', innerWidth / 2, innerHeight / 2, 'combo'); play(['fanfare', 'v-allclear'], 1); }
+    }, 420);
+  } else S.combo = 0;
+  addScore(gained);
+  if (tray.every(x => !x)) tray = newTray();
+  renderTray();
+  S.board = board; S.tray = tray; save();
+  setTimeout(checkOver, lines ? 500 : 150);
+}
+let bestBeaten = false;
+function addScore(n) {
+  S.score += n;
+  const el = $('#score'); el.textContent = S.score; el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 150);
+  if (S.score > S.best && S.best > 0 && !bestBeaten) { bestBeaten = true; floatText('New best score! 👑', innerWidth / 2, $('#score').getBoundingClientRect().bottom, 'combo'); play(['fanfare', 'v-newbest'], 1); }
+  if (S.score > S.best) { S.best = S.score; }
+  $('#best').textContent = `👑 ${S.best}`;
+}
+function checkOver() {
+  if (over || tray.filter(Boolean).some(p => fitsAnywhere(SHAPES[p.s]))) return;
+  over = true;
+  S.games++;
+  S.hist = [...(S.hist || []), { s: S.score, t: Date.now() }].slice(-40);
+  const final = S.score, wasBest = bestBeaten || (S.games === 1 && final > 0);
+  S.board = null; S.tray = null; save(); cloudSave();
+  play(['gameover', wasBest ? 'v-greatbest' : 'v-greatgame'], 0.9);
+  const recent = S.hist.slice(-10), max = Math.max(...recent.map(x => x.s), 1);
+  $('#overCard').innerHTML = `<h2>${wasBest ? 'A new best! 👑' : 'Great game! 🌟'}</h2>
+    <div class="big">${final}</div>
+    <p>👑 Best: <b>${S.best}</b> &nbsp;·&nbsp; 🎮 Games: <b>${S.games}</b></p>
+    <div class="hist">${recent.map(x => `<div style="height:${Math.round(x.s / max * 100)}%"></div>`).join('')}</div><small class="n">Your last ${recent.length} game${recent.length > 1 ? 's' : ''}</small>
+    <div><button class="btn" id="againBtn">Play again</button></div>`;
+  setTimeout(() => $('#over').classList.add('show'), 700);
+  $('#againBtn').onclick = () => { $('#over').classList.remove('show'); newGame(); };
+}
+function newGame() {
+  board = Array.from({ length: N }, () => Array(N).fill(null));
+  S.score = 0; S.combo = 0; over = false; bestBeaten = false;
+  tray = newTray(); S.board = board; S.tray = tray;
+  $('#score').textContent = 0;
+  document.querySelectorAll('.gem').forEach(g => g.closest('#board') && g.remove());
+  renderBoard(); renderTray(); save();
+}
+
+// ---------- sparkles and floating words ----------
+function sparks(el, colour) {
+  const r = el.getBoundingClientRect();
+  for (let i = 0; i < 4; i++) {
+    const s = document.createElement('div'); s.className = 'spark'; s.style.background = i % 2 ? '#fff' : colour;
+    s.style.left = r.left + r.width / 2 + 'px'; s.style.top = r.top + r.height / 2 + 'px'; document.body.appendChild(s);
+    const a = Math.random() * Math.PI * 2, d = 30 + Math.random() * 50;
+    s.animate([{ transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }, { transform: `translate(${Math.cos(a) * d - 4}px, ${Math.sin(a) * d - 4}px) scale(.2)`, opacity: 0 }], { duration: 600 + Math.random() * 300, easing: 'ease-out' }).onfinish = () => s.remove();
+  }
+}
+function bat() {
+  const e = document.createElement('div'); e.className = 'bat'; e.textContent = Math.random() < 0.3 ? '🐦‍⬛' : '🦇';
+  const br = $('#board').getBoundingClientRect(), x = br.left + Math.random() * br.width, y = br.top + Math.random() * br.height;
+  e.style.left = x + 'px'; e.style.top = y + 'px'; document.body.appendChild(e);
+  const dx = (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 200);
+  e.animate([{ transform: 'translate(0,0) scale(.5)', opacity: 0 }, { transform: `translate(${dx * 0.3}px, -40px) scale(1)`, opacity: 1, offset: 0.25 }, { transform: `translate(${dx}px, -260px) scale(.7)`, opacity: 0 }], { duration: 1400, easing: 'ease-in' }).onfinish = () => e.remove();
+}
+function floatText(txt, x, y, cls) {
+  const f = document.createElement('div'); f.className = 'float ' + cls; f.textContent = txt;
+  f.style.left = x + 'px'; f.style.top = y + 'px'; f.style.fontSize = cls ? '' : '30px';
+  document.body.appendChild(f); setTimeout(() => f.remove(), 1150);
+}
+
+// ---------- buttons ----------
+$('#soundBtn').onclick = () => { S.sound = !S.sound; $('#soundBtn').textContent = S.sound ? '🔊' : '🔈'; save(); };
+$('#newBtn').onclick = () => { if (S.score > 0) $('#confirm').classList.add('show'); else newGame(); };
+$('#yesNew').onclick = () => {
+  $('#confirm').classList.remove('show');
+  if (S.score > 0) { S.games++; S.hist = [...(S.hist || []), { s: S.score, t: Date.now() }].slice(-40); }
+  newGame();
+};
+$('#noNew').onclick = () => $('#confirm').classList.remove('show');
+let pickTheme = 'sparkle';
+document.querySelectorAll('.theme').forEach(b => b.onclick = () => { pickTheme = b.dataset.t; document.querySelectorAll('.theme').forEach(x => x.classList.toggle('on', x === b)); });
+function showPlayers() {
+  const list = Object.values(ST.players);
+  $('#playerList').innerHTML = list.length ? list.map(p => `<button class="btn ${p.theme === 'gothic' ? 'ghost' : ''}" data-p="${pkey(p.name)}">${p.theme === 'gothic' ? '🦇' : '✨'} ${esc(p.name)} <small>👑 ${p.best}</small></button>`).join('') : '';
+  $('#newHead').style.display = list.length ? '' : 'none';
+  $('#nameIn').value = list.length ? '' : 'Margot';
+  $('#hello').classList.add('show');
+}
+$('#playerList').onclick = e => { const b = e.target.closest('[data-p]'); if (b) switchTo(ST.players[b.dataset.p]); };
+function switchTo(p) {
+  audio(); stopMusic();
+  P = p; ST.cur = pkey(P.name);
+  board = P.board || Array.from({ length: N }, () => Array(N).fill(null)); tray = P.tray || newTray(); P.board = board; P.tray = tray;
+  over = false; bestBeaten = false;
+  applyTheme(); save(); cloudSave();
+  $('#hello').classList.remove('show');
+  document.querySelectorAll('#board .gem').forEach(g => g.remove());
+  renderBoard(); renderTray(); $('#score').textContent = P.score; $('#best').textContent = `👑 ${P.best}`;
+  startMusic();
+  const k = pkey(P.name);
+  play(k === 'margot' ? 'v-hello-margot' : k === 'manon' ? 'v-hello-manon' : 'v-hello', 1);
+  setTimeout(checkOver, 300);
+}
+$('#goBtn').onclick = () => {
+  const name = $('#nameIn').value.trim().slice(0, 14);
+  if (!name) { $('#nameIn').focus(); return; }
+  const k = pkey(name);
+  switchTo(ST.players[k] || (ST.players[k] = blank(name, pickTheme)));
+};
+$('#whoBtn').onclick = showPlayers;
+$('#musicBtn').onclick = () => { audio(); ST.music = !ST.music; $('#musicBtn').style.opacity = ST.music ? 1 : 0.4; save(); if (ST.music) startMusic(); else stopMusic(); };
+function applyTheme() {
+  document.body.classList.toggle('gothic', P.theme === 'gothic');
+  $('#title').textContent = TH().title;
+  $('#whoBtn').textContent = `${P.theme === 'gothic' ? '🦇' : '✨'} ${P.name || 'Who?'}`;
+  document.querySelector('meta[name=theme-color]').content = P.theme === 'gothic' ? '#050407' : '#1b1446';
+}
+document.addEventListener('pointerdown', () => { audio(); startMusic(); }, true);
+
+// ---------- start ----------
+addEventListener('resize', sizeBoard);
+sizeBoard(); buildBoard();
+if (!tray) tray = newTray();
+applyTheme(); $('#musicBtn').style.opacity = ST.music ? 1 : 0.4;
+$('#score').textContent = S.score || 0; $('#best').textContent = `👑 ${S.best || 0}`; $('#soundBtn').textContent = ST.sound ? '🔊' : '🔈';
+renderBoard(); renderTray();
+if (!P.name) showPlayers();
+setTimeout(checkOver, 300);
+window.__sb = { get S() { return P; }, get ST() { return ST; }, get board() { return board; }, get tray() { return tray; }, place: (i, r, c) => place(i, tray[i], r, c), fits: (i, r, c) => fits(SHAPES[tray[i].s], r, c) };
+</script>
+</body>
+</html>
