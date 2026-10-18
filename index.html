@@ -115,19 +115,21 @@
 </div></div>
 
 <div id="dbg" style="position:fixed;left:8px;right:8px;top:2px;z-index:99;font:12px/1.3 ui-monospace,monospace;color:#9f9;pointer-events:none;white-space:normal"></div>
-<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v4</div>
+<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v5</div>
 <div id="err" style="position:fixed;left:8px;right:8px;bottom:8px;z-index:99;display:none;background:#b3123a;color:#fff;font:14px/1.3 system-ui;padding:8px 10px;border-radius:10px"></div>
 <script>
 // diagnostics: add ?debug=1 to the address to see what the iPad reports
-const BUILD = 'v4';
+const BUILD = 'v5';
 const DEBUG = /[?&]debug=1/.test(location.search);
 const dbgCounts = {};
-function dbg(name, extra) {
+let dbgLast = '';
+function dbg(name, extra, quiet) {
   if (!DEBUG) return;
-  dbgCounts[name] = (dbgCounts[name] || 0) + 1;
+  if (!quiet) { dbgCounts[name] = (dbgCounts[name] || 0) + 1; if (extra) dbgLast = extra; }
   const d = document.getElementById('dbg'); if (!d) return;
-  d.textContent = `${BUILD} · ${Object.entries(dbgCounts).map(([k, v]) => k + ' ' + v).join(' · ')}${extra ? ' · ' + extra : ''}`;
+  d.textContent = `${BUILD} ⏱${beat} · ${Object.entries(dbgCounts).map(([k, v]) => k + ' ' + v).join(' · ')} · ${dbgLast}`;
 }
+let beat = 0; if (DEBUG) setInterval(() => { beat++; dbg('tick', null, true); }, 1000);
 if (DEBUG) for (const t of ['touchstart', 'touchmove', 'touchend', 'touchcancel', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'click'])
   document.addEventListener(t, e => dbg(t, (e.target && e.target.className ? 'on ' + String(e.target.className).slice(0, 18) : '') + (t === 'touchstart' ? ' at ' + Math.round(e.touches[0].clientX) + ',' + Math.round(e.touches[0].clientY) : '')), { capture: true, passive: true });
 window.addEventListener('error', e => { const d = document.getElementById('err'); d.style.display = 'block'; d.textContent = 'Oops: ' + e.message + ' (line ' + e.lineno + ')'; });
@@ -187,7 +189,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sav
 // ---------- sound: recorded clips only (sounds/manifest.json) ----------
 let AC = null, CLIPS = new Set(); const BUF = new Map();
 const CLIPS_READY = fetch('sounds/manifest.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : []).then(k => { CLIPS = new Set(k); }).catch(() => {});
-function audio() { if (!AC) try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} if (AC && AC.state !== 'running') AC.resume(); }
+function audio() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); dbg('audio-made'); } catch (e) { dbg('audio-fail'); } } if (AC && AC.state !== 'running') { try { AC.resume(); } catch (e) {} } }
 const clip = k => { if (!BUF.has(k)) BUF.set(k, fetch(`sounds/${k}.mp3`).then(r => r.arrayBuffer()).then(b => new Promise((res, rej) => AC.decodeAudioData(b, res, rej))).catch(() => null)); return BUF.get(k); };
 async function play(keys, vol = 0.9) {
   if (!S.sound || !AC) return;
@@ -197,12 +199,14 @@ async function play(keys, vol = 0.9) {
   for (const k of keys) { const b = await clip(k); if (!b) continue; const s = AC.createBufferSource(), g = AC.createGain(); g.gain.value = vol; s.buffer = b; s.connect(g).connect(AC.destination); s.start(t); t += b.duration + 0.05; }
 }
 
-let musicSrc = null;
+let musicSrc = null, musicLoading = false;
+const NOMUSIC = /[?&]nomusic=1/.test(location.search);
 async function startMusic() {
-  if (!AC || !ST.music || musicSrc) return;
+  if (!AC || !ST.music || musicSrc || NOMUSIC || musicLoading) return;
+  musicLoading = true; dbg('music-load');
   await CLIPS_READY;
   const k = TH().music; if (!CLIPS.has(k)) return;
-  const b = await clip(k); if (!b || musicSrc) return;
+  const b = await clip(k); dbg('music-decoded', b ? 'ok' : 'failed'); if (!b || musicSrc) return;
   const s = AC.createBufferSource(), g = AC.createGain(); g.gain.value = 0.22; s.buffer = b; s.loop = true; s.connect(g).connect(AC.destination); s.start();
   musicSrc = s;
 }
@@ -506,7 +510,7 @@ else {
 }
 let tapped = false;
 function tapGo(e) {
-  if (tapped) return; tapped = true; if (e && e.cancelable) e.preventDefault();
+  if (tapped) return; tapped = true; dbg('tapGo');
   audio(); $('#tapStart').classList.remove('show');
   startMusic(); renderTray(true);
   const k = pkey(P.name);
