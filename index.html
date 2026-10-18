@@ -51,6 +51,8 @@
   #tray { width: calc(var(--cell) * 8 + 16px); height: calc(var(--cell) * 3.4); display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 14px; }
   .slot { display: flex; align-items: center; justify-content: center; }
   .piece { display: grid; gap: 0; touch-action: none; transition: transform .15s, opacity .15s; }
+  .piece.enter { animation: enter .45s cubic-bezier(.3,1.6,.5,1) both; }
+  @keyframes enter { 0% { transform: scale(.2) translateY(40px); opacity: 0; } 100% { transform: none; opacity: 1; } }
   .piece .pc { width: calc(var(--cell) * .52); height: calc(var(--cell) * .52); position: relative; }
   .piece.nofit { opacity: .35; filter: grayscale(.5); }
   #drag { position: fixed; left: 0; top: 0; display: grid; pointer-events: none; z-index: 20; filter: drop-shadow(0 10px 12px rgba(0,0,0,.45)); }
@@ -98,6 +100,12 @@
   <input class="name" id="nameIn" maxlength="14" placeholder="Your name">
   <div class="themes"><button class="theme on" data-t="sparkle">✨ Sparkle</button><button class="theme" data-t="gothic">🦇 Nevermore</button></div>
   <div><button class="btn" id="goBtn">Let's play!</button></div>
+</div></div>
+<div class="overlay" id="tapStart"><div class="card" style="cursor:pointer">
+  <h2 id="tapTitle">Block Blitz</h2>
+  <p id="tapSub">Tap to play!</p>
+  <div class="big" style="font-size:64px">▶️</div>
+  <p><small class="n" id="tapSwitch">Not you? Tap the name button at the top to switch.</small></p>
 </div></div>
 <div class="overlay" id="over"><div class="card" id="overCard"></div></div>
 <div class="overlay" id="confirm"><div class="card">
@@ -238,11 +246,12 @@ function pieceGrid(p, cls) {
   }
   return el;
 }
-function renderTray() {
+function renderTray(fresh = false) {
   document.querySelectorAll('.slot').forEach((slot, i) => {
     slot.innerHTML = '';
     const p = tray[i]; if (!p) return;
     const el = pieceGrid(p, 'piece'); el.dataset.i = i;
+    if (fresh) { el.classList.add('enter'); el.style.animationDelay = (i * 0.08) + 's'; }
     if (!fitsAnywhere(SHAPES[p.s])) el.classList.add('nofit');
     slot.appendChild(el);
   });
@@ -332,8 +341,9 @@ function place(i, p, r0, c0) {
     }, 420);
   } else S.combo = 0;
   addScore(gained);
-  if (tray.every(x => !x)) tray = newTray();
-  renderTray();
+  const freshSet = tray.every(x => !x);
+  if (freshSet) tray = newTray();
+  renderTray(freshSet);
   S.board = board; S.tray = tray; save();
   setTimeout(checkOver, lines ? 500 : 150);
 }
@@ -460,6 +470,17 @@ applyTheme(); $('#musicBtn').style.opacity = ST.music ? 1 : 0.4;
 $('#score').textContent = S.score || 0; $('#best').textContent = `👑 ${S.best || 0}`; $('#soundBtn').textContent = ST.sound ? '🔊' : '🔈';
 renderBoard(); renderTray();
 if (!P.name) showPlayers();
+else {
+  $('#tapTitle').textContent = P.theme === 'gothic' ? `🦇 ${P.name}` : `✨ ${P.name}`;
+  $('#tapSub').textContent = P.theme === 'gothic' ? `Tap to play, ${P.name}.` : `Tap to play, ${P.name}!`;
+  $('#tapStart').classList.add('show');
+}
+$('#tapStart').onclick = () => {
+  audio(); $('#tapStart').classList.remove('show');
+  startMusic(); renderTray(true);
+  const k = pkey(P.name);
+  play(['margot', 'manon', 'dad'].includes(k) ? `v-hello-${k}` : 'v-hello', 1);
+};
 setTimeout(checkOver, 300);
 window.__sb = { get S() { return P; }, get ST() { return ST; }, get board() { return board; }, get tray() { return tray; }, place: (i, r, c) => place(i, tray[i], r, c), fits: (i, r, c) => fits(SHAPES[tray[i].s], r, c) };
 </script>
