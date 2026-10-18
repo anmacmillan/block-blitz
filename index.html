@@ -101,7 +101,7 @@
   <div class="themes"><button class="theme on" data-t="sparkle">✨ Sparkle</button><button class="theme" data-t="gothic">🦇 Nevermore</button></div>
   <div><button class="btn" id="goBtn">Let's play!</button></div>
 </div></div>
-<div class="overlay" id="tapStart"><div class="card" style="cursor:pointer">
+<div class="overlay" id="tapStart"><div class="card" id="tapCard" role="button" style="cursor:pointer">
   <h2 id="tapTitle">Block Blitz</h2>
   <p id="tapSub">Tap to play!</p>
   <div class="big" style="font-size:64px">▶️</div>
@@ -114,6 +114,11 @@
   <button class="btn" id="yesNew">New game</button><button class="btn ghost" id="noNew">Keep playing</button>
 </div></div>
 
+<div id="err" style="position:fixed;left:8px;right:8px;bottom:8px;z-index:99;display:none;background:#b3123a;color:#fff;font:14px/1.3 system-ui;padding:8px 10px;border-radius:10px"></div>
+<script>
+window.addEventListener('error', e => { const d = document.getElementById('err'); d.style.display = 'block'; d.textContent = 'Oops: ' + e.message + ' (line ' + e.lineno + ')'; });
+window.addEventListener('unhandledrejection', e => { const d = document.getElementById('err'); d.style.display = 'block'; d.textContent = 'Oops: ' + (e.reason && e.reason.message || e.reason); });
+</script>
 <script>
 // Block Blitz: an ad-free block puzzle for Margot and Manon. No ads, no links out, no tracking.
 const $ = s => document.querySelector(s);
@@ -260,20 +265,27 @@ function renderTray(fresh = false) {
 // ---------- dragging (lifted above the finger, like the real thing) ----------
 let drag = null;
 const LIFT = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell')) * 1.6;
-$('#tray').addEventListener('pointerdown', e => {
-  const el = e.target.closest('.piece'); if (!el || over) return;
+// iPads get native touch events (the most reliable on Safari's engine); mouse and pen use pointer events
+const pt = e => (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]) || e;
+function beginDrag(el, e) {
+  if (!el || over || drag) return;
   audio();
-  const i = +el.dataset.i, p = tray[i];
+  const i = +el.dataset.i, p = tray[i]; if (!p) return;
   const d = $('#drag'); d.innerHTML = ''; const g = pieceGrid(p, ''); d.style.gridTemplateColumns = g.style.gridTemplateColumns; d.style.gridTemplateRows = g.style.gridTemplateRows;
   [...g.children].forEach(x => d.appendChild(x));
   el.style.opacity = 0;
   drag = { i, p, el, pos: null };
-  moveDrag(e); play('pick', 0.5);
-  try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
-});
-addEventListener('pointermove', e => { if (drag) moveDrag(e); });
-addEventListener('pointerup', e => { if (drag) dropDrag(e); });
-addEventListener('pointercancel', () => { if (drag) { drag.el.style.opacity = 1; $('#drag').innerHTML = ''; clearGhost(); drag = null; } });
+  moveDrag(pt(e)); play('pick', 0.5);
+}
+function cancelDrag() { if (drag) { drag.el.style.opacity = 1; $('#drag').innerHTML = ''; clearGhost(); drag = null; } }
+$('#tray').addEventListener('touchstart', e => { const el = e.target.closest && e.target.closest('.piece'); if (!el) return; e.preventDefault(); beginDrag(el, e); }, { passive: false });
+document.addEventListener('touchmove', e => { if (drag) { e.preventDefault(); moveDrag(pt(e)); } }, { passive: false });
+document.addEventListener('touchend', e => { if (drag) { e.preventDefault(); moveDrag(pt(e)); dropDrag(); } }, { passive: false });
+document.addEventListener('touchcancel', cancelDrag);
+$('#tray').addEventListener('pointerdown', e => { if (e.pointerType === 'touch') return; beginDrag(e.target.closest('.piece'), e); });
+addEventListener('pointermove', e => { if (drag && e.pointerType !== 'touch') moveDrag(e); });
+addEventListener('pointerup', e => { if (drag && e.pointerType !== 'touch') dropDrag(); });
+addEventListener('pointercancel', e => { if (e.pointerType !== 'touch') cancelDrag(); });
 function moveDrag(e) {
   const d = $('#drag'), w = d.offsetWidth, h = d.offsetHeight;
   const x = e.clientX - w / 2, y = e.clientY - h - LIFT() * 0.55;
@@ -461,6 +473,7 @@ function applyTheme() {
   document.querySelector('meta[name=theme-color]').content = P.theme === 'gothic' ? '#050407' : '#1b1446';
 }
 document.addEventListener('pointerdown', () => { audio(); startMusic(); }, true);
+document.addEventListener('touchend', () => { audio(); startMusic(); }, true);   // older iPads only allow sound to start on touchend
 
 // ---------- start ----------
 addEventListener('resize', sizeBoard);
@@ -475,13 +488,18 @@ else {
   $('#tapSub').textContent = P.theme === 'gothic' ? `Tap to play, ${P.name}.` : `Tap to play, ${P.name}!`;
   $('#tapStart').classList.add('show');
 }
-$('#tapStart').onclick = () => {
+let tapped = false;
+function tapGo(e) {
+  if (tapped) return; tapped = true; if (e && e.cancelable) e.preventDefault();
   audio(); $('#tapStart').classList.remove('show');
   startMusic(); renderTray(true);
   const k = pkey(P.name);
   play(['margot', 'manon', 'dad'].includes(k) ? `v-hello-${k}` : 'v-hello', 1);
-};
+}
+$('#tapStart').addEventListener('click', tapGo);
+$('#tapStart').addEventListener('touchend', tapGo, { passive: false });
 setTimeout(checkOver, 300);
+document.title = 'Block Blitz';
 window.__sb = { get S() { return P; }, get ST() { return ST; }, get board() { return board; }, get tray() { return tray; }, place: (i, r, c) => place(i, tray[i], r, c), fits: (i, r, c) => fits(SHAPES[tray[i].s], r, c) };
 </script>
 </body>
