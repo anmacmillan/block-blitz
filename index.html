@@ -53,6 +53,7 @@
   #play { display: flex; flex-direction: column; align-items: center; }
   body.land #play { flex-direction: row; align-items: center; }
   body.land #tray { width: calc(var(--cell) * 4.2); height: calc(var(--cell) * 8 + 16px); grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); margin: 0 0 0 18px; }
+  body.land #tip { position: fixed; bottom: 14px; left: 0; right: 0; }
   body.land #score { font-size: 44px; margin: 0 0 4px; }
   .piece { display: grid; gap: 0; touch-action: none; transition: transform .15s, opacity .15s; }
   .piece.enter { animation: enter .45s cubic-bezier(.3,1.6,.5,1) both; }
@@ -94,6 +95,7 @@
 <div id="score">0</div>
 <div id="play">
 <div id="board"></div>
+<div id="tip" style="display:none;font-weight:800;font-size:18px;margin:10px 0 0;color:var(--gold);text-align:center">Fill a whole row or column to blast it! 💥</div>
 <div id="tray"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
 </div>
 <div id="drag"></div>
@@ -121,11 +123,11 @@
 </div></div>
 
 <div id="dbg" style="position:fixed;left:8px;right:8px;top:2px;z-index:99;font:12px/1.3 ui-monospace,monospace;color:#9f9;pointer-events:none;white-space:normal"></div>
-<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v8</div>
+<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v9</div>
 <div id="err" style="position:fixed;left:8px;right:8px;bottom:8px;z-index:99;display:none;background:#b3123a;color:#fff;font:14px/1.3 system-ui;padding:8px 10px;border-radius:10px"></div>
 <script>
 // diagnostics: add ?debug=1 to the address to see what the iPad reports
-const BUILD = 'v8';
+const BUILD = 'v9';
 const DEBUG = /[?&]debug=1/.test(location.search);
 const dbgCounts = {};
 let dbgLast = '';
@@ -373,6 +375,7 @@ function place(i, p, r0, c0) {
   for (let c = 0; c < N; c++) if (board.every(row => row[c] != null)) cols.push(c);
   const lines = rows.length + cols.length;
   if (lines) {
+    if (!P.blasted) { P.blasted = true; showTip(); }
     S.combo++;
     const pts = 80 * lines * lines * Math.max(1, S.combo);
     gained += pts;
@@ -456,6 +459,7 @@ function bat() {
   const dx = (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 200);
   e.animate([{ transform: 'translate(0,0) scale(.5)', opacity: 0 }, { transform: `translate(${dx * 0.3}px, -40px) scale(1)`, opacity: 1, offset: 0.25 }, { transform: `translate(${dx}px, -260px) scale(.7)`, opacity: 0 }], { duration: 1400, easing: 'ease-in' }).onfinish = () => e.remove();
 }
+function showTip() { $('#tip').style.display = P.blasted ? 'none' : ''; }
 function floatText(txt, x, y, cls) {
   const f = document.createElement('div'); f.className = 'float ' + cls; f.textContent = txt;
   f.style.left = x + 'px'; f.style.top = y + 'px'; f.style.fontSize = cls ? '' : '30px';
@@ -494,7 +498,7 @@ function switchTo(p) {
   P = p; ST.cur = pkey(P.name);
   board = P.board || Array.from({ length: N }, () => Array(N).fill(null)); tray = P.tray || newTray(); P.board = board; P.tray = tray;
   over = false; bestBeaten = false;
-  applyTheme(); save(); cloudSave();
+  applyTheme(); save(); cloudSave(); showTip();
   $('#hello').classList.remove('show');
   document.querySelectorAll('#board .gem').forEach(g => g.remove());
   renderBoard(); renderTray(); $('#score').textContent = P.score; $('#best').textContent = `👑 ${P.best}`;
@@ -527,7 +531,7 @@ sizeBoard(); buildBoard();
 if (!tray) tray = newTray();
 applyTheme(); $('#musicBtn').style.opacity = ST.music ? 1 : 0.4;
 $('#score').textContent = S.score || 0; $('#best').textContent = `👑 ${S.best || 0}`; $('#soundBtn').textContent = ST.sound ? '🔊' : '🔈';
-renderBoard(); renderTray();
+renderBoard(); renderTray(); showTip();
 if (!P.name) showPlayers();
 else {
   $('#tapTitle').textContent = P.theme === 'gothic' ? `🦇 ${P.name}` : `✨ ${P.name}`;
