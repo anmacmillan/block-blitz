@@ -176,11 +176,11 @@
 </div></div>
 
 <div id="dbg" style="position:fixed;left:8px;right:8px;top:2px;z-index:99;font:12px/1.3 ui-monospace,monospace;color:#9f9;pointer-events:none;white-space:normal"></div>
-<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v16</div>
+<div id="ver" style="position:fixed;right:8px;bottom:4px;z-index:5;font:11px system-ui;opacity:.35;pointer-events:none">v17</div>
 <div id="err" style="position:fixed;left:8px;right:8px;bottom:8px;z-index:99;display:none;background:#b3123a;color:#fff;font:14px/1.3 system-ui;padding:8px 10px;border-radius:10px"></div>
 <script>
 // diagnostics: add ?debug=1 to the address to see what the iPad reports
-const BUILD = 'v16';
+const BUILD = 'v17';
 const DEBUG = /[?&]debug=1/.test(location.search);
 const dbgCounts = {};
 let dbgLast = '';
@@ -707,6 +707,17 @@ function shout(kind, extra, confettiN) {
   const list = SHOUTS[kind], i = Math.floor(Math.random() * list.length);
   bigMoment(list[i] + (extra || ''), `a-${kind}-${i}`, confettiN);
 }
+// the announcer speaks only for rare, big moments, and never more than once every 45 seconds
+// (everyday clears still get the giant words, the shake and confetti, just no voice)
+const QUIET = /^a-(blast|double|combo|supercombo|hundred|unstoppable|trophy)/;
+const ALWAYS = /^a-(record|boss|bossdown|ascend|legend)/;
+let announcedAt = -1e9;
+function announce(clip) {
+  if (QUIET.test(clip)) return false;
+  const now = Date.now();
+  if (!ALWAYS.test(clip) && now - announcedAt < 45000) return false;
+  announcedAt = now; return true;
+}
 // big moments: giant words, the announcer, a shake and confetti
 let slamAt = 0;
 function bigMoment(text, clip, confettiN = 70) {
@@ -719,7 +730,7 @@ function showMoment(text, clip, confettiN) {
   const e = document.createElement('div'); e.className = 'slam'; e.textContent = text; document.body.appendChild(e);
   setTimeout(() => e.remove(), 1300);
   const b = $('#board'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
-  if (clip) play(clip, 1);
+  if (clip && announce(clip)) play(clip, 1);
   confetti(confettiN);
 }
 function confetti(n) {
